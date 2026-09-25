@@ -1,0 +1,1935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>TrackKar — Automatic Habit Tracker (Buy & Download)</title>
+<script>
+(function(){try{if(localStorage.getItem('trackkar-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/playfair-display@latest/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/playfair-display@latest/900.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/poppins@latest/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/poppins@latest/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/poppins@latest/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/poppins@latest/700.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<!-- 100% static site: koi payment SDK / server script nahi chahiye -->
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --ink:#191722; --muted:#6e6a7c; --faint:#9b96a8;
+    --card-glass:rgba(255,255,255,.78); --card-border:#ffffff;
+    --line:#edeaf3; --soft:#f6f3fa; --panel:#fdfcff; --panel-2:#ffffff;
+    --cellbg:#ffffff; --ringbg:#efecf4;
+    --todaybg:#191722; --todayfg:#ffffff;
+    --topbar:rgba(255,255,255,.72);
+    --ok:#2fb479; --danger:#e04444; --gold:#d4a72c;
+    --shadow-sm:0 4px 14px rgba(52,24,74,.07);
+    --shadow-md:0 14px 40px rgba(52,24,74,.10);
+    --shadow-lg:0 24px 60px rgba(52,24,74,.14);
+    --r-lg:26px;
+    --bg:
+      radial-gradient(1100px 500px at 8% -10%, #fde7f1 0%, transparent 60%),
+      radial-gradient(900px 520px at 95% 0%, #e3edfc 0%, transparent 55%),
+      radial-gradient(800px 600px at 50% 110%, #e2f5f0 0%, transparent 60%),
+      #f7f5fa;
+  }
+  html[data-theme="dark"]{
+    color-scheme:dark;
+    --ink:#f1edf8; --muted:#a9a3bb; --faint:#7d7791;
+    --card-glass:rgba(28,25,38,.82); --card-border:rgba(255,255,255,.09);
+    --line:#332e44; --soft:#241f33; --panel:#221d31; --panel-2:#2a2440;
+    --cellbg:#1b1727; --ringbg:#332e44;
+    --todaybg:#f1edf8; --todayfg:#191722;
+    --topbar:rgba(20,17,28,.72);
+    --gold:#f4d47c;
+    --shadow-sm:0 4px 14px rgba(0,0,0,.35);
+    --shadow-md:0 14px 40px rgba(0,0,0,.45);
+    --shadow-lg:0 24px 60px rgba(0,0,0,.55);
+    --bg:
+      radial-gradient(1100px 500px at 8% -10%, #33163f 0%, transparent 60%),
+      radial-gradient(900px 520px at 95% 0%, #14243d 0%, transparent 55%),
+      radial-gradient(800px 600px at 50% 110%, #12302b 0%, transparent 60%),
+      #14121b;
+  }
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Poppins',system-ui,-apple-system,sans-serif; color:var(--ink);
+    background:var(--bg); background-attachment:fixed;
+    min-height:100vh; overflow-x:hidden; transition:color .3s;
+  }
+  h1,h2,h3,.serif{font-family:'Playfair Display',Georgia,serif}
+  button{font-family:'Poppins',sans-serif; touch-action:manipulation}
+
+  .rev{opacity:0; transform:translateY(18px); transition:opacity .65s ease, transform .65s cubic-bezier(.22,1,.36,1)}
+  .rev.in{opacity:1; transform:none}
+
+  .topbar{
+    position:sticky; top:0; z-index:60;
+    display:flex; align-items:center; gap:8px;
+    padding:12px clamp(10px,3vw,28px);
+    background:var(--topbar); backdrop-filter:blur(18px) saturate(1.4);
+    -webkit-backdrop-filter:blur(18px) saturate(1.4);
+    border-bottom:1px solid var(--card-border);
+    box-shadow:0 6px 30px rgba(0,0,0,.08);
+  }
+  .brand{display:flex; align-items:center; gap:10px; min-width:0}
+  .brand .logo{
+    width:38px; height:38px; border-radius:12px; flex:none; cursor:pointer;
+    display:grid; place-items:center; color:#fff; font-size:18px; font-weight:700;
+    background:linear-gradient(135deg,#5b1152,#b13aa6);
+    box-shadow:0 8px 20px rgba(91,17,82,.35);
+  }
+  .brand b{font-size:15px; display:block; line-height:1.15}
+  .brand small{display:block; color:var(--muted); font-size:10.5px; line-height:1.2}
+  .topspace{flex:1}
+  .topbtns{display:flex; gap:6px; align-items:center}
+  .monthnav{
+    display:flex; align-items:center; gap:4px;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:999px;
+    padding:5px 6px; box-shadow:var(--shadow-sm);
+  }
+  .monthnav button{
+    width:32px; height:32px; border:none; border-radius:50%;
+    background:var(--soft); color:var(--ink); font-size:17px; line-height:1;
+    cursor:pointer; transition:transform .15s, background .2s, color .2s;
+  }
+  .monthnav button:hover{background:#5b1152; color:#fff}
+  .monthnav button:active{transform:scale(.9)}
+  .monthnav .mlabel{min-width:118px; text-align:center; font-weight:600; font-size:13.5px}
+  .btn{border:none; cursor:pointer; border-radius:999px; font-weight:600; transition:transform .15s, box-shadow .2s, filter .2s}
+  .btn:active{transform:scale(.96)}
+  .btn:disabled{opacity:.6; cursor:wait; transform:none}
+  .btn-primary{
+    background:linear-gradient(135deg,#5b1152,#8d2089);
+    color:#fff; box-shadow:0 10px 26px rgba(91,17,82,.35);
+    padding:11px 20px; font-size:13.5px;
+    display:inline-flex; align-items:center; gap:7px; text-decoration:none;
+  }
+  html[data-theme="dark"] .btn-primary{background:linear-gradient(135deg,#8d2089,#c65bc4)}
+  .btn-primary:hover{filter:brightness(1.12); transform:translateY(-2px)}
+  .btn-ghost{background:var(--panel-2); border:1px solid var(--line); color:var(--ink); padding:11px 16px; font-size:12.5px; box-shadow:var(--shadow-sm); display:inline-flex; align-items:center; gap:6px; text-decoration:none}
+  .btn-ghost:hover{transform:translateY(-2px)}
+  .btn-icon{padding:10px 13px; font-size:15px; line-height:1}
+  .btn-danger{background:var(--danger); color:#fff; padding:11px 20px; font-size:13.5px}
+  .btn-gold{
+    background:linear-gradient(135deg,#d4a72c,#f4d47c); color:#3a2a00;
+    box-shadow:0 10px 24px rgba(212,167,44,.35);
+    padding:12px 22px; font-size:13.5px; font-weight:700;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn-gold:hover{filter:brightness(1.08); transform:translateY(-2px)}
+
+  .pricing-hero{text-align:center; margin-bottom:32px}
+  .pricing-hero .pill{
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg,rgba(212,167,44,.15),rgba(244,212,124,.1));
+    border:1.5px solid var(--gold); border-radius:999px;
+    padding:9px 20px; font-size:10.5px; letter-spacing:2.6px; font-weight:600;
+    color:var(--gold); box-shadow:var(--shadow-sm); margin-bottom:22px;
+  }
+  .pricing-hero h1{font-size:clamp(34px,7vw,64px); font-weight:900; line-height:1.1; letter-spacing:-.5px}
+  .pricing-hero h1 .grad{
+    font-style:italic;
+    background:linear-gradient(92deg,#8d2089 0%,#c74b9f 45%,#6ea8ea 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  html[data-theme="dark"] .pricing-hero h1 .grad{background:linear-gradient(92deg,#e07be0 0%,#c74b9f 45%,#7db6f2 100%);-webkit-background-clip:text;background-clip:text}
+  .pricing-hero p{color:var(--muted); font-size:clamp(14px,2vw,17px); margin-top:16px; max-width:600px; margin-inline:auto}
+  .pricing-hero p b{color:var(--ink)}
+
+  .pricing-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:32px}
+  .price-card{
+    background:var(--card-glass); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1.5px solid var(--line); border-radius:var(--r-lg);
+    padding:28px 22px; text-align:center; position:relative;
+    transition:transform .25s, box-shadow .25s, border-color .25s;
+  }
+  .price-card:hover{transform:translateY(-4px); box-shadow:var(--shadow-md)}
+  .price-card.featured{
+    border-color:var(--gold);
+    background:linear-gradient(180deg, rgba(212,167,44,.08), var(--card-glass));
+    transform:scale(1.03);
+    box-shadow:var(--shadow-md);
+  }
+  .price-card.featured::before{
+    content:'🏆 MOST POPULAR'; position:absolute; top:-14px; left:50%; transform:translateX(-50%);
+    background:linear-gradient(135deg,#d4a72c,#f4d47c); color:#3a2a00;
+    padding:5px 16px; border-radius:999px; font-size:10px; font-weight:700;
+    letter-spacing:1.2px; box-shadow:0 6px 16px rgba(212,167,44,.35);
+  }
+  .price-card .tier-name{font-size:14px; font-weight:700; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px}
+  .price-card .price{font-size:42px; font-weight:900; line-height:1; margin-bottom:4px}
+  .price-card .price small{font-size:16px; font-weight:500; color:var(--muted)}
+  .price-card .price-desc{font-size:12px; color:var(--muted); margin-bottom:20px}
+  .price-card ul{list-style:none; text-align:left; margin-bottom:22px}
+  .price-card ul li{padding:8px 0; font-size:13px; display:flex; gap:10px; align-items:flex-start; border-bottom:1px dashed var(--line)}
+  .price-card ul li:last-child{border-bottom:none}
+  .price-card ul li::before{content:'✓'; color:var(--ok); font-weight:700; flex:none}
+  .price-card ul li.no::before{content:'✕'; color:var(--faint)}
+  .price-card ul li.no{color:var(--faint)}
+
+  .license-bar{
+    background:var(--card-glass); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1.5px solid var(--line); border-radius:var(--r-lg);
+    padding:16px 22px; margin-bottom:22px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .license-bar.licensed{border-color:var(--ok); background:rgba(47,180,121,.08)}
+  .license-bar .lstat{display:flex; align-items:center; gap:10px; flex:1; min-width:0}
+  .license-bar .lico{width:38px; height:38px; border-radius:11px; display:grid; place-items:center; font-size:18px; flex:none; background:var(--soft)}
+  .license-bar.licensed .lico{background:rgba(47,180,121,.18); color:var(--ok)}
+  .license-bar .lstat b{font-size:13.5px; display:block}
+  .license-bar .lstat small{font-size:11px; color:var(--muted)}
+  .license-bar .lkey{
+    font-family:'Courier New',monospace; background:var(--soft); padding:6px 12px;
+    border-radius:9px; font-size:12px; font-weight:600; letter-spacing:1px;
+  }
+  .license-bar button{flex:none}
+
+  .demo-banner{
+    background:linear-gradient(135deg,rgba(141,32,137,.08),rgba(110,168,234,.08));
+    border:1.5px dashed var(--purple-2); border-radius:18px;
+    padding:14px 18px; margin-bottom:20px;
+    display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+    font-size:13px;
+  }
+  .demo-banner b{color:var(--ink)}
+  .demo-banner code{
+    background:var(--soft); padding:4px 10px; border-radius:7px;
+    font-family:'Courier New',monospace; font-weight:700; color:var(--purple-2);
+    cursor:pointer; transition:background .15s;
+  }
+  .demo-banner code:hover{background:var(--line)}
+
+  .features{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:28px 0}
+  .feature{
+    background:var(--card-glass); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid var(--card-border); border-radius:20px;
+    padding:20px; box-shadow:var(--shadow-sm);
+  }
+  .feature .fico{font-size:28px; margin-bottom:10px}
+  .feature h4{font-size:14px; font-weight:600; margin-bottom:6px}
+  .feature p{color:var(--muted); font-size:12px; line-height:1.5}
+
+  .testimonials{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin:28px 0}
+  .testimonial{
+    background:var(--card-glass); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid var(--card-border); border-radius:20px;
+    padding:22px; box-shadow:var(--shadow-sm);
+  }
+  .testimonial .stars{color:var(--gold); font-size:14px; margin-bottom:8px}
+  .testimonial .tq{font-size:13px; line-height:1.6; color:var(--ink); margin-bottom:12px; font-style:italic}
+  .testimonial .ta{display:flex; align-items:center; gap:10px; font-size:12px}
+  .testimonial .tav{width:32px; height:32px; border-radius:50%; display:grid; place-items:center; font-size:14px; font-weight:700; color:#fff; flex:none}
+  .testimonial .ta b{display:block; line-height:1.2}
+  .testimonial .ta span{color:var(--muted); font-size:10.5px}
+
+  .faq{margin:28px 0}
+  .faq details{
+    background:var(--card-glass); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid var(--card-border); border-radius:14px;
+    padding:16px 20px; margin-bottom:10px; box-shadow:var(--shadow-sm);
+    transition:border-color .2s;
+  }
+  .faq details[open]{border-color:var(--purple-2)}
+  .faq summary{cursor:pointer; font-weight:600; font-size:14px; list-style:none; display:flex; justify-content:space-between; align-items:center}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:'+'; font-size:20px; color:var(--muted); transition:transform .2s}
+  .faq details[open] summary::after{transform:rotate(45deg)}
+  .faq details p{margin-top:10px; color:var(--muted); font-size:13px; line-height:1.6}
+
+  .cta-section{
+    background:linear-gradient(135deg,#5b1152,#8d2089);
+    color:#fff; border-radius:var(--r-lg); padding:36px 28px;
+    text-align:center; margin:32px 0; box-shadow:var(--shadow-lg);
+  }
+  html[data-theme="dark"] .cta-section{background:linear-gradient(135deg,#3d1040,#6b1d6a)}
+  .cta-section h2{font-size:clamp(24px,4vw,32px); font-weight:800; margin-bottom:10px}
+  .cta-section p{opacity:.85; font-size:14px; margin-bottom:20px}
+  .cta-section .btn{background:#fff; color:#5b1152; padding:14px 28px; font-size:15px}
+  .cta-section .btn:hover{transform:translateY(-3px); filter:none; box-shadow:0 12px 30px rgba(0,0,0,.25)}
+
+  .wrap{max-width:1200px; margin:0 auto; padding:clamp(22px,4vw,44px) clamp(12px,3vw,24px) 80px}
+  .card{
+    background:var(--card-glass); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid var(--card-border); border-radius:var(--r-lg);
+    box-shadow:var(--shadow-md); padding:clamp(14px,2.6vw,26px);
+  }
+  .card h2{font-size:clamp(17px,2.4vw,22px); font-weight:700}
+  .card .sub{color:var(--muted); font-size:12.5px; margin:3px 0 16px}
+
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:14px}
+  .stat{display:flex; align-items:center; gap:14px; padding:18px}
+  .stat .ico{width:50px; height:50px; border-radius:16px; flex:none; display:grid; place-items:center; font-size:22px}
+  html[data-theme="dark"] .stat .ico{filter:saturate(.9) brightness(.85)}
+  .stat .info{min-width:0}
+  .stat .info b{font-size:clamp(18px,2.4vw,25px); font-weight:700; display:block; line-height:1.25}
+  .stat .info span{color:var(--muted); font-size:11.5px}
+
+  .ring{position:relative; flex:none}
+  .ring svg{display:block; transform:rotate(-90deg)}
+  .ring circle{fill:none; stroke-linecap:round}
+  .ring .bgc{stroke:var(--ringbg)}
+  .ring .fgc{transition:stroke-dashoffset 1s cubic-bezier(.22,1,.36,1)}
+  .ring .ringtxt{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center}
+  .ring .ringtxt b{font-size:14px; font-weight:700}
+  .ring .ringtxt span{font-size:9.5px; color:var(--muted)}
+
+  .charts{display:grid; grid-template-columns:1.55fr 1fr; gap:14px; margin-bottom:14px}
+  .chartbox{position:relative; height:230px}
+  .chartfallback{height:100%; display:grid; place-items:center; color:var(--muted); font-size:12.5px; text-align:center; padding:10px}
+  .weekrings{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap}
+  .witem{display:flex; flex-direction:column; align-items:center; gap:9px; flex:1; min-width:82px}
+  .witem label{font-size:11.5px; font-weight:600; color:var(--muted)}
+
+  .chips{display:flex; flex-wrap:wrap; gap:9px; margin-bottom:16px}
+  .chip{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--panel-2); border:1px solid var(--line); border-left:4px solid var(--c);
+    border-radius:999px; padding:8px 8px 8px 14px; font-size:12.5px; font-weight:500;
+    box-shadow:var(--shadow-sm); transition:transform .15s, box-shadow .2s;
+  }
+  .chip:hover{transform:translateY(-2px); box-shadow:var(--shadow-md)}
+  .chip .cdel{
+    width:24px; height:24px; border:none; border-radius:50%; cursor:pointer;
+    background:var(--soft); color:var(--muted); font-size:12px; line-height:1;
+    display:grid; place-items:center; transition:background .2s, color .2s, transform .15s;
+  }
+  .chip .cdel:hover{background:var(--danger); color:#fff; transform:rotate(90deg)}
+  .addbar{display:flex; gap:10px}
+  .addbar input{
+    flex:1; min-width:0; border:1.6px solid var(--line); border-radius:999px;
+    padding:13px 22px; font-family:'Poppins'; font-size:14px; background:var(--panel-2);
+    outline:none; transition:border-color .2s, box-shadow .2s; color:var(--ink);
+  }
+  .addbar input::placeholder{color:var(--faint)}
+  .addbar input:focus{border-color:#8d2089; box-shadow:0 0 0 5px rgba(141,32,137,.12)}
+
+  .boardctl{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+  .seg{display:inline-flex; background:var(--soft); border:1px solid var(--line); border-radius:999px; padding:4px; gap:4px}
+  .seg button{border:none; background:transparent; border-radius:999px; padding:7px 16px; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; transition:.2s}
+  .seg button.active{background:#5b1152; color:#fff; box-shadow:0 6px 16px rgba(91,17,82,.3)}
+  html[data-theme="dark"] .seg button.active{background:#8d2089}
+  .weektabs{display:flex; gap:7px; flex-wrap:wrap}
+  .weektabs button{
+    border:1.5px solid var(--line); background:var(--panel-2); border-radius:999px; padding:6px 14px;
+    font-size:11.5px; font-weight:600; color:var(--muted); cursor:pointer; transition:.2s}
+  .weektabs button.active{border-color:var(--wc); background:var(--wc); color:#fff; box-shadow:0 6px 14px rgba(0,0,0,.2)}
+  .boardhint{font-size:11px; color:var(--faint); margin-left:auto}
+
+  .boardwrap{overflow-x:auto; padding-bottom:4px; scrollbar-width:thin}
+  .board{--n:7; --namecol:minmax(84px,132px); --pctcol:44px; --gap:3px; min-width:0}
+  .board.week{--namecol:minmax(86px,170px); --pctcol:40px; --gap:5px}
+  .b-row{display:grid; align-items:center; grid-template-columns:var(--namecol) repeat(var(--n), minmax(9px,1fr)) var(--pctcol); gap:var(--gap); margin-bottom:var(--gap)}
+  .board.week .b-row{grid-template-columns:var(--namecol) repeat(var(--n), minmax(26px,1fr)) var(--pctcol)}
+  .b-corner{min-width:0; font-size:9.5px; color:var(--faint); letter-spacing:1px; padding:4px 6px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+  .b-band{border-radius:8px; color:#fff; font-size:9.5px; font-weight:600; letter-spacing:1.2px; text-align:center; padding:5px 0; overflow:hidden; white-space:nowrap}
+  .board.week .b-band{font-size:11px; padding:7px 0; border-radius:10px}
+  .b-daynum{font-size:9px; color:var(--muted); text-align:center; font-weight:500; border-radius:6px; padding:2px 0; overflow:hidden}
+  .board.week .b-daynum{font-size:11.5px; padding:4px 0; font-weight:600}
+  .b-daynum.today{background:var(--todaybg); color:var(--todayfg); font-weight:700}
+  .b-name{background:var(--panel); border-radius:10px; padding:7px 10px; display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:500; box-shadow:0 2px 10px rgba(0,0,0,.06); min-width:0}
+  .board.week .b-name{font-size:13.5px; padding:10px 12px; border-radius:12px}
+  .b-name .dot{width:8px; height:8px; border-radius:50%; flex:none}
+  .b-name .htxt{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .b-cellbtn{width:100%; aspect-ratio:1; border-radius:5px; border:1.2px solid var(--c); background:var(--cellbg); cursor:pointer; position:relative; padding:0; min-width:0; transition:transform .12s, background .18s}
+  .board.week .b-cellbtn{border-radius:10px; border-width:1.8px}
+  .b-cellbtn:hover{transform:scale(1.14)}
+  .b-cellbtn:active{transform:scale(.9)}
+  .b-cellbtn.on{background:var(--c)}
+  .b-cellbtn.on::after{content:'✓'; position:absolute; inset:0; display:grid; place-items:center; color:#fff; font-size:10px; font-weight:700}
+  .board.week .b-cellbtn.on::after{font-size:16px}
+  .b-cellbtn:disabled{opacity:.28; cursor:not-allowed; transform:none}
+  .b-cellbtn.tdy{outline:2px solid var(--todayfg); outline-offset:1px}
+  .b-pct{font-size:10px; font-weight:700; border-radius:999px; padding:4px 2px; text-align:center; min-width:0}
+  .board.week .b-pct{font-size:12px; padding:6px 4px}
+  .gridfoot{margin-top:14px; color:var(--muted); font-size:12px; display:flex; gap:8px 20px; flex-wrap:wrap}
+
+  .board.compact{display:flex; flex-direction:column; gap:6px}
+  .mblock{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:12px 12px 14px; box-shadow:0 2px 10px rgba(0,0,0,.05)}
+  .mhead{display:flex; align-items:center; gap:9px; margin-bottom:10px}
+  .mhead .dot{width:10px; height:10px; border-radius:50%; flex:none}
+  .mhead .mname{flex:1; min-width:0; font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .mhead .b-pct{font-size:11.5px; padding:5px 10px; flex:none}
+  .mgrid{display:grid; grid-template-columns:26px repeat(7, minmax(0,1fr)); gap:8px 6px; align-items:center}
+  .mwlabel{font-size:10px; font-weight:700; letter-spacing:.5px}
+  .mdaycol{display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0}
+  .mnum{font-size:8.5px; color:var(--faint); font-weight:600; line-height:1}
+  .mdaycol .b-cellbtn{border-radius:9px; border-width:1.6px}
+  .mdaycol .b-cellbtn.on::after{font-size:14px}
+
+  .mainrow{display:flex; flex-direction:column; gap:14px; margin-bottom:14px}
+  .sidecol{display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start}
+  .toplist{display:flex; flex-direction:column; gap:12px}
+  .topitem{display:flex; align-items:center; gap:10px; font-size:13px}
+  .topitem .rank{width:22px; height:22px; border-radius:8px; background:var(--soft); flex:none; display:grid; place-items:center; font-size:10.5px; font-weight:700; color:var(--muted)}
+  .topitem .tn{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500}
+  .topitem .bar{height:7px; border-radius:99px; background:var(--soft); overflow:hidden; flex:1.1; min-width:56px}
+  .topitem .bar i{display:block; height:100%; border-radius:99px; transition:width .9s cubic-bezier(.22,1,.36,1)}
+  .topitem b{font-size:12px; width:42px; text-align:right; font-weight:700}
+  table.daily{width:100%; border-collapse:collapse; font-size:12px; margin-top:4px}
+  table.daily th{color:var(--muted); font-weight:500; text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); font-size:10.5px; letter-spacing:.8px; text-transform:uppercase}
+  table.daily td{padding:9px 6px; border-bottom:1px solid var(--line); font-weight:500}
+  table.daily tr:last-child td{border-bottom:none}
+  .fire{color:#e67e22}
+  .empty{color:var(--muted); font-size:13px; text-align:center; padding:26px 10px}
+
+  footer{text-align:center; color:var(--muted); font-size:12px; margin-top:26px; line-height:2.1}
+  footer .fbtn{background:none; border:none; color:#8d2089; font-size:12px; font-weight:600; cursor:pointer; text-decoration:underline; text-underline-offset:3px; margin:0 6px}
+  html[data-theme="dark"] footer .fbtn{color:#e07be0}
+
+  .overlay{
+    position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:20px;
+    background:rgba(15,12,22,.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .overlay.show{opacity:1; pointer-events:auto}
+  .modal{
+    width:min(440px,100%); background:var(--panel-2); border-radius:24px; padding:26px 24px;
+    box-shadow:var(--shadow-lg); text-align:center; max-height:88vh; overflow-y:auto;
+    transform:translateY(16px) scale(.96); transition:transform .3s cubic-bezier(.22,1,.36,1);
+  }
+  .overlay.show .modal{transform:none}
+  .modal .mico{width:56px; height:56px; border-radius:18px; margin:0 auto 14px; display:grid; place-items:center; font-size:25px; background:#fdecec; color:var(--danger)}
+  .modal .mico.purple{background:rgba(141,32,137,.14); color:#c65bc4}
+  .modal .mico.gold{background:rgba(212,167,44,.15); color:var(--gold)}
+  .modal h3{font-size:20px; margin-bottom:8px}
+  .modal p{color:var(--muted); font-size:12.5px; margin-bottom:16px; line-height:1.6}
+  .modalbtns{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+  .pdfopts{display:flex; flex-direction:column; gap:9px}
+  .pdfopts .btn{width:100%; justify-content:center; font-size:13px; word-break:break-all}
+  .pdfopts .btn small{display:block; font-weight:400; font-size:10px; opacity:.85}
+  .guarantee{
+    background:rgba(47,180,121,.10); border:1.5px dashed var(--ok); border-radius:18px;
+    padding:14px; margin-bottom:14px; display:flex; flex-direction:column; gap:9px; text-align:left;
+  }
+  .guarantee .gtitle{font-size:12.5px; font-weight:700; color:var(--ink); display:flex; gap:7px; align-items:center}
+  .linkrow{display:flex; gap:8px}
+  .linkrow .btn{flex:1; justify-content:center}
+  #pdfQr{width:150px; height:150px; border-radius:14px; border:1px solid var(--line); background:#fff; margin:2px auto 0; display:block}
+  .qrhint{font-size:10.5px; color:var(--muted); text-align:center; line-height:1.5}
+  #pdfEmbedBox iframe{width:100%; height:320px; border:1px solid var(--line); border-radius:16px; background:#fff}
+
+  .license-input-row{display:flex; gap:8px; margin:10px 0}
+  .license-input-row input{
+    flex:1; border:1.6px solid var(--line); border-radius:999px;
+    padding:11px 18px; font-family:'Courier New',monospace; font-size:13px;
+    background:var(--panel-2); outline:none; color:var(--ink); letter-spacing:1px;
+  }
+  .license-input-row input:focus{border-color:#8d2089}
+
+  .toasts{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:120; display:flex; flex-direction:column; gap:9px; align-items:center; width:max-content; max-width:92vw}
+  .toast{
+    background:rgba(25,23,34,.94); color:#fff; border-radius:999px; padding:12px 22px;
+    font-size:13px; font-weight:500; box-shadow:var(--shadow-lg);
+    display:flex; align-items:center; gap:9px; max-width:92vw;
+    animation:tin .35s cubic-bezier(.22,1,.36,1);
+  }
+  html[data-theme="dark"] .toast{background:rgba(240,236,250,.95); color:#191722}
+  .toast.out{animation:tout .3s forwards}
+  @keyframes tin{from{opacity:0; transform:translateY(16px) scale(.94)}to{opacity:1; transform:none}}
+  @keyframes tout{to{opacity:0; transform:translateY(10px) scale(.95)}}
+
+  #printReport{display:none}
+  @media print{
+    body{background:#fff !important}
+    .screen{display:none !important}
+    .overlay,.toasts{display:none !important}
+    #printReport{display:block !important; color:#111; font-family:'Poppins',sans-serif; padding:8px}
+    #printReport h1{font-family:'Playfair Display',serif; font-size:26px; margin:0}
+    .pr-head{display:flex; align-items:center; gap:12px; border-bottom:3px solid #5b1152; padding-bottom:12px; margin-bottom:16px}
+    .pr-logo{width:40px; height:40px; border-radius:10px; background:#5b1152; color:#fff; display:grid; place-items:center; font-size:19px; font-weight:700}
+    .pr-meta{color:#666; font-size:11px; margin-top:2px}
+    .pr-stats{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px}
+    .pr-stat{flex:1; min-width:100px; border:1px solid #ddd; border-radius:10px; padding:10px 12px}
+    .pr-stat b{font-size:17px; display:block}
+    .pr-stat span{color:#666; font-size:10px}
+    #printReport h2{font-family:'Playfair Display',serif; font-size:16px; margin:14px 0 6px}
+    .pr-table{width:100%; border-collapse:collapse; font-size:10.5px; margin-bottom:6px}
+    .pr-table th,.pr-table td{border:1px solid #ccc; padding:5px 7px; text-align:left}
+    .pr-table th{background:#f3eef5; font-weight:600}
+    .pr-days{font-family:monospace; font-size:9.5px; letter-spacing:1px; white-space:normal; word-break:break-all}
+    .pr-foot{margin-top:14px; color:#888; font-size:9.5px; border-top:1px solid #ddd; padding-top:8px}
+  }
+
+  @media (max-width:900px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .charts{grid-template-columns:1fr}
+    .chartbox{height:200px}
+    .pricing-grid{grid-template-columns:1fr}
+    .price-card.featured{transform:none}
+  }
+  @media (max-width:640px){
+    .brand small{display:none}
+    .brand b{display:none}
+    .monthnav .mlabel{min-width:88px; font-size:12px}
+    .btn-primary .btxt{display:none}
+    .btn-primary{padding:11px 14px}
+    .addbar .btn-primary .btxt{display:inline}
+    .addbar .btn-primary{padding:12px 18px}
+    .sidecol{grid-template-columns:1fr}
+    .stat{padding:14px; gap:10px}
+    .stat .ico{width:42px; height:42px; font-size:19px; border-radius:13px}
+    .boardhint{display:none}
+    .topbtns{gap:4px}
+    .monthnav button{width:28px; height:28px}
+  }
+  @media (max-width:400px){
+    .stats{gap:9px}
+    .monthnav .mlabel{min-width:74px; font-size:11px}
+    .addbar{flex-direction:column}
+    .addbar .btn-primary{width:100%; justify-content:center}
+    .btn-ghost{padding:11px 10px}
+    .btn-ghost span.lbl{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important; transition:none !important}
+    .rev{opacity:1; transform:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="screen">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" id="brandLogo" title="TrackKar">✓</div>
+      <div><b>TrackKar</b><small>automatic habit tracker</small></div>
+    </div>
+    <div class="topspace"></div>
+    <div class="topbtns" id="topBtns">
+      <nav class="monthnav" id="monthNav" style="display:none">
+        <button id="prevM" type="button" aria-label="Previous month">‹</button>
+        <div class="mlabel" id="monthLabel">—</div>
+        <button id="nextM" type="button" aria-label="Next month">›</button>
+      </nav>
+      <button class="btn btn-ghost btn-icon" id="themeBtn" type="button" title="Switch dark / light mode">
+        <span id="themeIco">🌙</span>
+      </button>
+      <button class="btn btn-ghost btn-icon" id="pdfBtn" type="button" title="PDF report" style="display:none">
+        <span>📄</span><span class="lbl">PDF</span>
+      </button>
+      <button class="btn btn-primary" id="buyBtn" type="button">
+        <span>🛒</span><span class="btxt">Buy Now</span>
+      </button>
+      <button class="btn btn-primary" id="topAdd" type="button" style="display:none">
+        <span aria-hidden="true">＋</span><span class="btxt">New Habit</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <div id="shopPage">
+
+      <section class="pricing-hero rev">
+        <div class="pill">✨ ONE-TIME PURCHASE • LIFETIME ACCESS</div>
+        <h1>Turn your life<br><span class="grad">into a game.</span></h1>
+        <p>The most beautiful <b>automatic habit tracker</b> you'll ever use. Works in any browser, saves your data locally, and exports to PDF. No subscription. No tracking. Just results.</p>
+      </section>
+
+      <div class="license-bar" id="licenseBar" style="display:none">
+        <div class="lstat">
+          <div class="lico">🔓</div>
+          <div>
+            <b id="licenseLabel">Licensed</b>
+            <small id="licenseSub">You own this product</small>
+          </div>
+        </div>
+        <span class="lkey" id="licenseKeyDisplay">—</span>
+        <button class="btn btn-ghost" id="enterAppBtn" type="button">Open App →</button>
+        <button class="btn btn-ghost" id="revokeBtn" type="button">Sign out</button>
+      </div>
+
+      <div class="demo-banner rev">
+        <span>🎁 <b>Free trial:</b> Use demo key <code id="demoKeyCode">DEMO2026</code> to unlock the full app and test every feature.</span>
+        <button class="btn btn-ghost" id="tryDemoBtn" type="button">Try Demo</button>
+      </div>
+
+      <section class="pricing-grid">
+        <div class="price-card rev">
+          <div class="tier-name">Basic</div>
+          <div class="price">₹9<small> one-time</small></div>
+          <div class="price-desc">Perfect to start your journey</div>
+          <ul>
+            <li>Full habit tracker app</li>
+            <li>Unlimited habits</li>
+            <li>Month & Week views</li>
+            <li>Dark / Light mode</li>
+            <li>PDF export reports</li>
+            <li class="no">Priority email support</li>
+            <li class="no">Future updates</li>
+          </ul>
+          <button class="btn btn-primary" data-buy="basic" type="button">Buy Basic — ₹9</button>
+        </div>
+        <div class="price-card featured rev">
+          <div class="tier-name">Pro</div>
+          <div class="price">₹29<small> one-time</small></div>
+          <div class="price-desc">Best value — most popular choice</div>
+          <ul>
+            <li>Everything in Basic</li>
+            <li>Use on 3 devices</li>
+            <li>Priority email support</li>
+            <li>All future updates</li>
+            <li>CSV data export</li>
+            <li>Custom color themes</li>
+            <li class="no">Source code access</li>
+          </ul>
+          <button class="btn btn-gold" data-buy="pro" type="button">Buy Pro — ₹29</button>
+        </div>
+        <div class="price-card rev">
+          <div class="tier-name">Lifetime</div>
+          <div class="price">₹49<small> one-time</small></div>
+          <div class="price-desc">For developers & power users</div>
+          <ul>
+            <li>Everything in Pro</li>
+            <li>Unlimited devices</li>
+            <li>Full source code (.html)</li>
+            <li>Rebrand & resell rights</li>
+            <li>1-on-1 setup call</li>
+            <li>Lifetime updates forever</li>
+            <li>Private Discord access</li>
+          </ul>
+          <button class="btn btn-primary" data-buy="lifetime" type="button">Buy Lifetime — ₹49</button>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="serif" style="text-align:center; font-size:clamp(24px,4vw,32px); margin-bottom:6px">What's inside</h2>
+        <p class="sub" style="text-align:center; color:var(--muted); font-size:14px; margin-bottom:20px">Every feature built to keep you consistent</p>
+        <div class="features">
+          <div class="feature rev"><div class="fico">📊</div><h4>Beautiful Dashboard</h4><p>All your habits in one place with rings, charts, and progress bars.</p></div>
+          <div class="feature rev"><div class="fico">📅</div><h4>Month & Week Views</h4><p>Responsive board — fits perfectly on phone, tablet and desktop.</p></div>
+          <div class="feature rev"><div class="fico">🌙</div><h4>Dark Mode</h4><p>One-tap switch between light and dark themes. Your choice is remembered.</p></div>
+          <div class="feature rev"><div class="fico">📄</div><h4>PDF Reports</h4><p>Export your data as a professional PDF — download, share, print, or email.</p></div>
+          <div class="feature rev"><div class="fico">🔥</div><h4>Streak Tracking</h4><p>Automatic streak counter with 🔥 fire emoji when you hit milestones.</p></div>
+          <div class="feature rev"><div class="fico">🏆</div><h4>Perfect Day Alerts</h4><p>Get a celebration toast when you complete every habit of the day.</p></div>
+          <div class="feature rev"><div class="fico">💾</div><h4>Local Autosave</h4><p>Your data stays in your browser — no account, no cloud, 100% private.</p></div>
+          <div class="feature rev"><div class="fico">📦</div><h4>Backup & Restore</h4><p>Export your habits to JSON and restore them on any other device.</p></div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="serif" style="text-align:center; font-size:clamp(24px,4vw,32px); margin-bottom:6px">Loved by 2,400+ users</h2>
+        <p class="sub" style="text-align:center; color:var(--muted); font-size:14px; margin-bottom:20px">Real stories from real people</p>
+        <div class="testimonials">
+          <div class="testimonial rev">
+            <div class="stars">★★★★★</div>
+            <div class="tq">"I've tried every habit app. This is the only one I kept using for more than 2 weeks. The dashboard is gorgeous."</div>
+            <div class="ta"><div class="tav" style="background:#6ea8ea">A</div><div><b>Aarav S.</b><span>Software Engineer</span></div></div>
+          </div>
+          <div class="testimonial rev">
+            <div class="stars">★★★★★</div>
+            <div class="tq">"Bought the Lifetime tier. The PDF reports are perfect for my monthly review with my coach. Worth every rupee."</div>
+            <div class="ta"><div class="tav" style="background:#f08cb4">P</div><div><b>Priya M.</b><span>Freelance Designer</span></div></div>
+          </div>
+          <div class="testimonial rev">
+            <div class="stars">★★★★★</div>
+            <div class="tq">"No account, no tracking, works offline. Finally a product that respects my privacy AND looks this good."</div>
+            <div class="ta"><div class="tav" style="background:#4fc8bc">R</div><div><b>Rohan K.</b><span>Privacy Advocate</span></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="faq">
+        <h2 class="serif" style="text-align:center; font-size:clamp(24px,4vw,32px); margin-bottom:20px">Frequently asked</h2>
+        <details class="rev"><summary>How do I get the app after payment?</summary><p>Pay via UPI / Cashfree, then send the receipt on WhatsApp. The seller verifies and sends your <b>license key</b> (usually within 24 hours). Enter the key and the app unlocks forever.</p></details>
+        <details class="rev"><summary>Is this a subscription?</summary><p>No. One-time payment, lifetime access. No recurring charges, ever.</p></details>
+        <details class="rev"><summary>Where is my data stored?</summary><p>100% locally in your browser using localStorage. Nothing is sent to any server. Your data is private by design.</p></details>
+        <details class="rev"><summary>Can I use it on multiple devices?</summary><p>Basic: 1 device. Pro: up to 3 devices. Lifetime: unlimited devices. Use Backup/Restore to move your data anywhere.</p></details>
+        <details class="rev"><summary>What payment methods do you accept?</summary><p>Any UPI app (GPay, PhonePe, Paytm), plus cards & wallets via the optional Cashfree link. Simple and direct.</p></details>
+        <details class="rev"><summary>What if I'm not satisfied?</summary><p>30-day no-questions-asked refund. Message the seller on WhatsApp with your order ID.</p></details>
+        <details class="rev"><summary>Can I try it before buying?</summary><p>Yes! Use demo key <code style="background:var(--soft);padding:2px 8px;border-radius:6px;font-family:monospace">DEMO2026</code> to unlock the full app with no payment required.</p></details>
+      </section>
+
+      <section class="cta-section rev">
+        <h2 class="serif">Ready to build better habits?</h2>
+        <p>Join 2,400+ people who turned their lives into a game. One-time payment, lifetime access.</p>
+        <button class="btn" id="ctaBuyBtn" type="button">Buy TrackKar Now →</button>
+      </section>
+
+    </div><!-- /shopPage -->
+
+    <div id="appPage" style="display:none">
+
+      <section class="hero rev">
+        <div class="pill"><i></i>AUTOSAVES IN YOUR BROWSER • NO SIGN-UP</div>
+        <h1>Turn your life<br><span class="grad">into a game.</span></h1>
+        <p>Tick your habits every day — progress, streaks, rings and charts are all <b>calculated automatically</b>.</p>
+      </section>
+
+      <section class="stats">
+        <div class="card stat rev">
+          <div id="todayRing"></div>
+          <div class="info"><b id="todayTxt">—</b><span>Today's progress</span></div>
+        </div>
+        <div class="card stat rev">
+          <div class="ico" style="background:linear-gradient(135deg,#e8f1fd,#dcebfd)">📈</div>
+          <div class="info"><b id="monthPct">0%</b><span id="monthPctSub">Month progress</span></div>
+        </div>
+        <div class="card stat rev">
+          <div class="ico" style="background:linear-gradient(135deg,#fdeef5,#fbdfea)">✅</div>
+          <div class="info"><b id="totalChecks">0</b><span>Checkmarks this month</span></div>
+        </div>
+        <div class="card stat rev">
+          <div class="ico" style="background:linear-gradient(135deg,#fff3e2,#ffe8cc)">🔥</div>
+          <div class="info"><b id="bestStreak">0</b><span>Best active streak (days)</span></div>
+        </div>
+      </section>
+
+      <section class="charts">
+        <div class="card rev">
+          <h2>Progress You Can See</h2>
+          <div class="sub">Daily completion trend for the selected month</div>
+          <div class="chartbox" id="areaBox"><canvas id="areaChart"></canvas></div>
+        </div>
+        <div class="card rev">
+          <h2>Day Bars by Week</h2>
+          <div class="sub">Every bar is one day, colored by its week</div>
+          <div class="chartbox" id="barBox"><canvas id="barChart"></canvas></div>
+        </div>
+      </section>
+
+      <section class="card rev" style="margin-bottom:14px">
+        <h2>Week-wise Completion</h2>
+        <div class="sub">Five weekly rings — the fuller the ring, the more consistent the week</div>
+        <div class="weekrings" id="weekRings"></div>
+      </section>
+
+      <section class="card manage rev">
+        <h2>Manage Your Habits</h2>
+        <div class="sub">Add a new habit below, or remove any habit with its ✕ button</div>
+        <div class="chips" id="chips"></div>
+        <div class="addbar" id="addBar">
+          <input id="habitInput" type="text" maxlength="40" enterkeyhint="done" placeholder="Type a new habit… e.g. Read 10 pages" aria-label="New habit name">
+          <button class="btn btn-primary" id="addBtn" type="button">
+            <span aria-hidden="true">＋</span><span class="btxt">Add Habit</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="mainrow">
+        <div class="card rev">
+          <h2>All Your Habits in One Dashboard</h2>
+          <div class="sub">Tap any day cell to tick / untick — everything updates instantly</div>
+          <div class="boardctl">
+            <div class="seg" id="segMode" role="group" aria-label="Board view">
+              <button type="button" data-mode="month">Month view</button>
+              <button type="button" data-mode="week">Week view</button>
+            </div>
+            <div class="weektabs" id="weekTabs"></div>
+            <div class="boardhint" id="boardHint"></div>
+          </div>
+          <div class="boardwrap"><div class="board" id="board"></div></div>
+          <div class="gridfoot" id="gridFoot"></div>
+        </div>
+
+        <div class="sidecol">
+          <div class="card rev">
+            <h2>Top Habits</h2>
+            <div class="sub">Best performers this month</div>
+            <div class="toplist" id="topList"></div>
+          </div>
+          <div class="card rev">
+            <h2>Daily Progress</h2>
+            <div class="sub">Full breakdown per habit</div>
+            <table class="daily">
+              <thead><tr><th>Habit</th><th>%</th><th>Done</th><th>Streak</th></tr></thead>
+              <tbody id="dailyBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <footer class="rev">
+        ✓ Your data is saved <b>automatically</b> in this browser.<br>
+        🔑 License: <b id="footerLicenseTier">—</b> • <button class="fbtn" id="manageLicenseBtn" type="button">Manage license</button>•
+        <button class="fbtn" id="downloadApp" type="button">Download app file (.html)</button>•
+        <button class="fbtn" id="exportData" type="button">Backup data (.json)</button>•
+        <button class="fbtn" id="importBtn" type="button">Restore backup</button>•
+        <button class="fbtn" id="resetDemo" type="button">Restore demo data</button>•
+        <button class="fbtn" id="clearAll" type="button">Clear all data</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+      </footer>
+    </div><!-- /appPage -->
+
+  </div>
+
+</div><!-- /screen -->
+
+<div id="printReport"></div>
+
+<!-- CONFIRM MODAL -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="mico" id="modalIco">🗑️</div>
+    <h3 id="modalTitle">Delete habit?</h3>
+    <p id="modalMsg">This cannot be undone.</p>
+    <div class="modalbtns">
+      <button class="btn btn-ghost" id="modalCancel" type="button">Cancel</button>
+      <button class="btn btn-danger" id="modalOk" type="button">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL (100% static: UPI QR + WhatsApp fulfillment) -->
+<div class="overlay" id="payOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="mico gold">🛒</div>
+    <h3>Pay <b id="payPrice">₹29</b> — <span id="payTierName">Pro</span> <span style="font-size:12px;color:var(--muted)">(Order: <b id="orderIdTxt">—</b>)</span></h3>
+    <p id="payDesc">Step 1: UPI se pay karo → Step 2: "I have paid" dabao → seller verify karke license key bhejega (24h).</p>
+    <img id="upiQr" alt="UPI QR" style="width:170px;height:170px;border-radius:14px;border:1px solid var(--line);background:#fff;margin:0 auto 12px;display:block">
+    <div class="pdfopts"><a class="btn btn-primary" id="upiDeepLink">📱 Open in UPI app</a><a class="btn btn-ghost" id="cfLinkBtn" style="display:none" target="_blank" rel="noopener">💳 Pay with Cashfree</a><button class="btn btn-gold" id="paidWhatsapp" type="button">✅ I have paid — WhatsApp receipt</button></div>
+    <div class="pdfopts" style="margin-top:8px"><button class="btn btn-ghost" id="paidEmail" type="button">📧 Receipt by email</button><button class="btn btn-ghost" id="haveKeyBtn" type="button">🔑 I have a license key</button><button class="btn btn-ghost" id="payCancel" type="button">Close</button></div>
+  </div>
+</div>
+
+<!-- LICENSE KEY MODAL -->
+<div class="overlay" id="licenseOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="mico purple" id="licenseModalIcon">🔑</div>
+    <h3 id="licenseModalTitle">Enter your license key</h3>
+    <p id="licenseModalDesc">Paste the key you received from the seller, or use <code style="background:var(--soft);padding:2px 8px;border-radius:6px;font-family:monospace">DEMO2026</code> for free trial.</p>
+    <div class="license-input-row">
+      <input id="licenseInput" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="modalbtns">
+      <button class="btn btn-ghost" id="licenseCancel" type="button">Cancel</button>
+      <button class="btn btn-primary" id="licenseActivate" type="button">Activate</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF DOWNLOAD CENTER -->
+<div class="overlay" id="pdfOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="mico purple">📄</div>
+    <h3>PDF Download Center</h3>
+    <p id="pdfNote">Your report is generated. Pick any method.</p>
+    <div class="guarantee">
+      <div class="gtitle">✅ GUARANTEED METHOD</div>
+      <button class="btn btn-primary" id="pdfLink" type="button">🔗&nbsp; Create download link + QR</button>
+      <div id="linkResult" style="display:none">
+        <a class="btn btn-ghost" id="pdfLinkOut" target="_blank" rel="noopener" style="display:none"></a>
+        <div class="linkrow" style="margin-top:8px">
+          <button class="btn btn-ghost" id="pdfCopy" type="button">📋 Copy link</button>
+        </div>
+        <img id="pdfQr" alt="QR code" style="display:none">
+        <div class="qrhint">Open the link (or scan QR) in any browser — PDF downloads there.</div>
+      </div>
+    </div>
+    <div class="pdfopts">
+      <button class="btn btn-primary" id="pdfShare" type="button" style="display:none">📤&nbsp; Save via Share menu</button>
+      <a class="btn btn-primary" id="pdfDl">⬇&nbsp; Download PDF</a>
+      <a class="btn btn-ghost" id="pdfTab" target="_blank" rel="noopener">🗔&nbsp; Open in new tab</a>
+      <button class="btn btn-ghost" id="pdfPrint" type="button">🖨&nbsp; Print / Save as PDF</button>
+      <button class="btn btn-ghost" id="pdfClose" type="button">Close</button>
+    </div>
+    <div id="pdfEmbedBox" style="display:none;margin-top:12px">
+      <iframe id="pdfFrame" title="PDF preview"></iframe>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* =====================================================================
+     💳 CONFIG — 100% STATIC SITE (GitHub Pages ready, koi server nahi)
+     Line 887: UPI ID | Line 888: WhatsApp | Line 889: Seller PIN | Line 890: Cashfree links (optional)
+     Payment flow: UPI QR / Cashfree link → buyer WhatsApp par receipt bhejta hai →
+     aap verify karke license key bhejte ho (seller panel: logo par 5 tap).
+  ===================================================================== */
+  var UPI_ID = 'infospectrum302@okhdfcbank';
+  var WHATSAPP_NUMBER = '9284167410';
+  var SELLER_PIN = '2468';
+  var CASHFREE_LINKS = { basic:'', pro:'', lifetime:'' };
+  var SUPPORT_EMAIL = 'support@trackkar.store';
+
+  /* Pricing tiers */
+  var TIERS = {
+    basic: {name:'Basic', price:9, desc:'1 device, core features', receipt:'trackkar-basic'},
+    pro: {name:'Pro', price:29, desc:'3 devices + updates + priority support', receipt:'trackkar-pro'},
+    lifetime: {name:'Lifetime', price:49, desc:'Unlimited devices + source code', receipt:'trackkar-lifetime'}
+  };
+
+  /* Demo license key — works as a free trial, gives Pro features */
+  var DEMO_KEY = 'DEMO2026';
+  var DEMO_TIER = 'pro';
+
+  /* =====================================================================
+     DATA LAYER
+  ===================================================================== */
+  var STORAGE_KEY = 'trackkar-habit-state-v12';
+  var THEME_KEY = 'trackkar-theme';
+  var LICENSE_KEY = 'trackkar-license';
+  var WEEK_COLORS = ['#6ea8ea','#f08cb4','#4fc8bc','#eebf3a','#a58fd8'];
+  var HABIT_COLORS = ['#6ea8ea','#f08cb4','#4fc8bc','#eebf3a','#a58fd8','#f2994a','#56ccf2','#eb5757','#8db600','#b07aa1','#2fb479','#e07be0'];
+  var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var DAY_MS = 86400000;
+  var today = new Date();
+  var storageOk = true;
+
+  function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
+  function dateKey(y,m,d){ return y+'-'+m+'-'+d; }
+  function weekOf(d){ return Math.min(4, Math.floor((d-1)/7)); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function byId(id){ return document.getElementById(id); }
+  function isPhone(){ return window.matchMedia('(max-width:640px)').matches; }
+  function isDark(){ return document.documentElement.getAttribute('data-theme')==='dark'; }
+
+  function safeGet(k){ try{ return localStorage.getItem(k); }catch(e){ storageOk=false; return null; } }
+  function safeSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ storageOk=false; return false; } }
+  function safeDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+
+  /* ===== LICENSE SYSTEM ===== */
+  function getLicense(){
+    var raw = safeGet(LICENSE_KEY);
+    if(!raw) return null;
+    try{ return JSON.parse(raw); }catch(e){ return null; }
+  }
+  function setLicense(lic){ safeSet(LICENSE_KEY, JSON.stringify(lic)); }
+  function clearLicense(){ safeDel(LICENSE_KEY); }
+  function hasLicense(){ var l = getLicense(); return !!(l && l.key); }
+  function licenseTier(){ var l = getLicense(); return l ? l.tier : null; }
+
+  function generateKey(tier){
+    var rand = function(){ return Math.random().toString(36).substring(2,6).toUpperCase(); };
+    var prefix = tier==='basic'?'TKBS':tier==='pro'?'TKPR':'TKLT';
+    return prefix+'-'+rand()+'-'+rand()+'-'+rand();
+  }
+
+  function validateKey(key){
+    if(!key) return null;
+    key = key.trim().toUpperCase();
+    if(key === DEMO_KEY) return {tier: DEMO_TIER, demo:true};
+    if(/^TK(BS|PR|LT)-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(key)){
+      var tierCode = key.substring(2,4);
+      var tier = tierCode==='BS'?'basic':tierCode==='PR'?'pro':'lifetime';
+      return {tier:tier, demo:false};
+    }
+    return null;
+  }
+
+  function seedDemo(){
+    var names = ['Read 1 Hour','Workout','Drink 3L Water','Wake Up Early','Eat Clean','Meditate 10 Min','Learn Spanish','No Doomscrolling'];
+    var habits = names.map(function(n,i){ return {id:'h'+i+'_'+Date.now(), name:n, color:HABIT_COLORS[i%HABIT_COLORS.length]}; });
+    var checks = {};
+    var now = new Date();
+    habits.forEach(function(h,hi){
+      checks[h.id] = {};
+      var prob = 0.5 + ((hi*7)%4)*0.11;
+      var pm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+      var dimP = daysInMonth(pm.getFullYear(), pm.getMonth());
+      var d;
+      for(d=1; d<=dimP; d++){ if(Math.random()<prob) checks[h.id][dateKey(pm.getFullYear(),pm.getMonth(),d)] = 1; }
+      for(d=1; d<now.getDate(); d++){ if(Math.random()<prob) checks[h.id][dateKey(now.getFullYear(),now.getMonth(),d)] = 1; }
+    });
+    return {habits:habits, checks:checks};
+  }
+  function loadState(){
+    var raw = safeGet(STORAGE_KEY);
+    if(raw){
+      try{ var p = JSON.parse(raw); if(p && Array.isArray(p.habits) && p.checks) return p; }catch(e){}
+    }
+    var s = seedDemo();
+    saveState(s);
+    return s;
+  }
+  function saveState(s){ safeSet(STORAGE_KEY, JSON.stringify(s)); }
+
+  var state = loadState();
+  var viewYear = today.getFullYear();
+  var viewMonth = today.getMonth();
+  var perfectDayFlag = false;
+  var userPref = null;
+  var viewWeek = weekOf(today.getDate());
+  function autoMode(){ return window.innerWidth < 900 ? 'week' : 'month'; }
+  var boardMode = autoMode();
+
+  /* ===== HELPERS ===== */
+  function isChecked(hid,y,m,d){ return !!(state.checks[hid] && state.checks[hid][dateKey(y,m,d)]); }
+  function isViewingCurrent(){ return viewYear===today.getFullYear() && viewMonth===today.getMonth(); }
+  function elapsedLimit(){
+    var dim = daysInMonth(viewYear, viewMonth);
+    if(isViewingCurrent()) return today.getDate();
+    if(new Date(viewYear, viewMonth, 1) > today) return 0;
+    return dim;
+  }
+  function habitDaySet(hid){
+    var obj = state.checks[hid] || {}, set = {}, k, p;
+    for(k in obj){ p = k.split('-'); set[new Date(+p[0],+p[1],+p[2]).getTime()] = 1; }
+    return set;
+  }
+  function setHas(set,t){ return set[t] === 1; }
+  function currentStreakFromSet(set){
+    var cursor = new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime();
+    if(!setHas(set,cursor)) cursor -= DAY_MS;
+    var n=0; while(setHas(set,cursor)){ n++; cursor -= DAY_MS; }
+    return n;
+  }
+  function monthStreak(hid,y,m){
+    var dim = daysInMonth(y,m), run=0, best=0, d;
+    for(d=1; d<=dim; d++){ if(isChecked(hid,y,m,d)){ run++; if(run>best) best=run; } else run=0; }
+    return best;
+  }
+  function habitMonthStats(hid,y,m){
+    var dim = daysInMonth(y,m), limit = elapsedLimit(), done=0, d;
+    for(d=1; d<=dim; d++){ if(isChecked(hid,y,m,d)) done++; }
+    return {done:done, goal:dim, pct: limit>0 ? Math.round(done/limit*100) : 0};
+  }
+  function monthTotals(){
+    var n = state.habits.length, limit = elapsedLimit(), total = 0, h;
+    for(h=0;h<n;h++) total += habitMonthStats(state.habits[h].id, viewYear, viewMonth).done;
+    return {n:n, limit:limit, total:total, possible:n*limit};
+  }
+
+  /* ===== TOAST ===== */
+  function toast(msg, icon){
+    var box = byId('toasts');
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = '<span>'+(icon||'✓')+'</span><span>'+esc(msg)+'</span>';
+    box.appendChild(el);
+    setTimeout(function(){ el.classList.add('out'); setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 320); }, 3500);
+  }
+
+  /* ===== MODAL ===== */
+  var modalAction = null;
+  function askConfirm(title, msg, okLabel, onOk, icon){
+    byId('modalTitle').textContent = title;
+    byId('modalMsg').textContent = msg;
+    byId('modalOk').textContent = okLabel || 'Delete';
+    byId('modalIco').textContent = icon || '🗑️';
+    modalAction = onOk;
+    byId('overlay').classList.add('show');
+  }
+  function closeModal(){ byId('overlay').classList.remove('show'); modalAction = null; }
+  byId('modalCancel').addEventListener('click', closeModal);
+  byId('overlay').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+  byId('modalOk').addEventListener('click', function(){ var fn = modalAction; closeModal(); if(fn) fn(); });
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape'){ closeModal(); closePdfOverlay(); closePayOverlay(); closeLicenseOverlay(); }
+  });
+
+  /* ===== THEME ===== */
+  function applyTheme(t, silent){
+    document.documentElement.setAttribute('data-theme', t);
+    safeSet(THEME_KEY, t);
+    byId('themeIco').textContent = (t==='dark') ? '☀️' : '🌙';
+    if(areaChart){ try{ areaChart.destroy(); }catch(e){} areaChart = null; }
+    if(barChart){ try{ barChart.destroy(); }catch(e){} barChart = null; }
+    buildCharts();
+    renderStats();
+    if(!silent) toast(t==='dark' ? 'Dark mode ON' : 'Light mode ON', t==='dark' ? '🌙' : '☀️');
+  }
+  byId('themeBtn').addEventListener('click', function(){ applyTheme(isDark() ? 'light' : 'dark', false); });
+
+  /* ===== RING + COUNTER ===== */
+  function ringHTML(pct,color,size,sw,label,sub){
+    var r = (size-sw)/2, c = 2*Math.PI*r;
+    var off = c*(1-Math.min(1,Math.max(0,pct/100)));
+    return '<div class="ring" style="width:'+size+'px;height:'+size+'px">'+
+      '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">'+
+      '<circle class="bgc" cx="'+(size/2)+'" cy="'+(size/2)+'" r="'+r+'" stroke-width="'+sw+'"/>'+
+      '<circle class="fgc" cx="'+(size/2)+'" cy="'+(size/2)+'" r="'+r+'" stroke="'+color+'" stroke-width="'+sw+
+        '" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/>'+
+      '</svg>'+
+      '<div class="ringtxt"><b>'+label+'</b><span>'+sub+'</span></div></div>';
+  }
+  function setCount(el, target, suffix){
+    if(!el) return;
+    var from = parseInt(el.getAttribute('data-v') || '0', 10);
+    el.setAttribute('data-v', target);
+    if(from===target){ el.textContent = target + (suffix||''); return; }
+    var t0 = null, dur = 550;
+    function step(ts){
+      if(!t0) t0 = ts;
+      var p = Math.min(1,(ts-t0)/dur), e = 1-Math.pow(1-p,3);
+      el.textContent = Math.round(from + (target-from)*e) + (suffix||'');
+      if(p<1) window.requestAnimationFrame(step);
+    }
+    window.requestAnimationFrame(step);
+  }
+
+  /* ===== CHARTS ===== */
+  var areaChart=null, barChart=null;
+  function dailyPctArray(){
+    var dim = daysInMonth(viewYear, viewMonth), limit = elapsedLimit(), n = state.habits.length;
+    var out = [], d, h, cnt;
+    for(d=1; d<=dim; d++){
+      if(d>limit){ out.push(null); continue; }
+      cnt=0;
+      for(h=0;h<n;h++){ if(isChecked(state.habits[h].id, viewYear, viewMonth, d)) cnt++; }
+      out.push(n>0 ? Math.round(cnt/n*100) : 0);
+    }
+    return out;
+  }
+  function chartLabels(data){ var l=[],i; for(i=1;i<=data.length;i++) l.push(i); return l; }
+  function buildCharts(){
+    var areaBox = byId('areaBox'), barBox = byId('barBox');
+    if(typeof Chart === 'undefined'){
+      areaBox.innerHTML = '<div class="chartfallback">Charts library could not load here.<br>All numbers still work normally.</div>';
+      barBox.innerHTML = '<div class="chartfallback">Charts library could not load here.<br>All numbers still work normally.</div>';
+      return;
+    }
+    try{
+      var dark = isDark();
+      Chart.defaults.font.family = "'Poppins',sans-serif";
+      Chart.defaults.color = dark ? '#a9a3bb' : '#6e6a7c';
+      var gridCol = dark ? '#2e2940' : '#f0edf5';
+      var data = dailyPctArray(), labels = chartLabels(data);
+      var tip = {callbacks:{label:function(ctx){ return ctx.parsed.y + '% of habits done'; }}};
+      var scaleY = {min:0,max:100,grid:{color:gridCol},ticks:{callback:function(v){return v+'%';},font:{size:10}}};
+      var scaleX = {grid:{display:false},ticks:{font:{size:9},maxRotation:0,autoSkip:true}};
+      areaChart = new Chart(byId('areaChart'), {
+        type:'line',
+        data:{labels:labels, datasets:[{data:data, fill:true, backgroundColor: dark?'rgba(110,168,234,.20)':'rgba(110,168,234,.28)',
+          borderColor:'#6ea8ea', borderWidth:2.5, tension:.42, pointRadius:0, pointHitRadius:14,
+          pointHoverRadius:4, pointHoverBackgroundColor:'#8d2089'}]},
+        options:{responsive:true, maintainAspectRatio:false, animation:{duration:700},
+          plugins:{legend:{display:false}, tooltip:tip}, scales:{y:scaleY, x:scaleX}}
+      });
+      barChart = new Chart(byId('barChart'), {
+        type:'bar',
+        data:{labels:labels, datasets:[{data:data, borderRadius:6, borderSkipped:false,
+          backgroundColor:labels.map(function(d){ return WEEK_COLORS[weekOf(d)]; })}]},
+        options:{responsive:true, maintainAspectRatio:false, animation:{duration:700},
+          plugins:{legend:{display:false}, tooltip:tip}, scales:{y:scaleY, x:scaleX}}
+      });
+    }catch(e){ areaChart=null; barChart=null; }
+  }
+  function updateCharts(){
+    if(!areaChart || !barChart) return;
+    try{
+      var data = dailyPctArray(), labels = chartLabels(data);
+      areaChart.data.labels = labels; areaChart.data.datasets[0].data = data; areaChart.update();
+      barChart.data.labels = labels; barChart.data.datasets[0].data = data;
+      barChart.data.datasets[0].backgroundColor = labels.map(function(d){ return WEEK_COLORS[weekOf(d)]; });
+      barChart.update();
+    }catch(e){}
+  }
+
+  /* ===== RENDERERS ===== */
+  function renderStats(){
+    var t = monthTotals(), i;
+    var todayDone = 0;
+    for(i=0;i<t.n;i++){ if(isChecked(state.habits[i].id, today.getFullYear(), today.getMonth(), today.getDate())) todayDone++; }
+    var todayPct = t.n>0 ? Math.round(todayDone/t.n*100) : 0;
+    byId('todayRing').innerHTML = ringHTML(todayPct, isDark()?'#e07be0':'#8d2089', 62, 7, todayPct+'%', 'today');
+    byId('todayTxt').textContent = todayDone+'/'+t.n+' habits';
+    setCount(byId('monthPct'), t.possible>0 ? Math.round(t.total/t.possible*100) : 0, '%');
+    byId('monthPctSub').textContent = MONTH_NAMES[viewMonth]+' progress';
+    byId('totalChecks').innerHTML = '<span id="tcNum" data-v="0">0</span><span style="color:var(--faint);font-size:13px;font-weight:500"> / '+t.possible+'</span>';
+    setCount(byId('tcNum'), t.total, '');
+    var best = 0;
+    for(i=0;i<t.n;i++){
+      var cs = currentStreakFromSet(habitDaySet(state.habits[i].id));
+      if(cs>best) best=cs;
+    }
+    byId('bestStreak').innerHTML = '<span id="bsNum" data-v="0">0</span> <span class="fire">🔥</span>';
+    setCount(byId('bsNum'), best, '');
+  }
+
+  function renderWeekRings(){
+    var dim = daysInMonth(viewYear, viewMonth), limit = elapsedLimit(), n = state.habits.length;
+    var html = '', w, d, h;
+    for(w=0; w<5; w++){
+      var ws = w*7+1, we = Math.min(dim,(w+1)*7);
+      if(ws>dim) break;
+      var effEnd = Math.min(we, limit), daysCounted = Math.max(0, effEnd-ws+1);
+      var done = 0;
+      for(d=ws; d<=effEnd; d++){ for(h=0;h<n;h++){ if(isChecked(state.habits[h].id, viewYear, viewMonth, d)) done++; } }
+      var possible = n*daysCounted;
+      var pct = possible>0 ? Math.round(done/possible*100) : 0;
+      html += '<div class="witem">'+ringHTML(pct, WEEK_COLORS[w], 86, 9, (possible>0? pct+'%':'—'), 'week '+(w+1))+
+              '<label>'+done+' / '+possible+' ticks</label></div>';
+    }
+    byId('weekRings').innerHTML = html || '<div class="empty">No data for this month yet.</div>';
+  }
+
+  function renderChips(){
+    var box = byId('chips');
+    if(state.habits.length===0){
+      box.innerHTML = '<div class="empty" style="padding:8px 4px">No habits yet — add your first one below! 🌱</div>';
+      return;
+    }
+    box.innerHTML = state.habits.map(function(hb){
+      return '<span class="chip" style="--c:'+hb.color+'">'+esc(hb.name)+
+        '<button class="cdel" type="button" data-del="'+hb.id+'" aria-label="Delete">✕</button></span>';
+    }).join('');
+  }
+
+  function cellButton(hb, d){
+    var wc = WEEK_COLORS[weekOf(d)];
+    var on = isChecked(hb.id, viewYear, viewMonth, d);
+    var dis = d > elapsedLimit();
+    var tdy = isViewingCurrent() && d===today.getDate();
+    return '<button type="button" class="b-cellbtn'+(on?' on':'')+(tdy?' tdy':'')+'" style="--c:'+wc+'"'+
+           (dis?' disabled':'')+' data-h="'+hb.id+'" data-d="'+d+'"></button>';
+  }
+
+  function renderBoard(){
+    var board = byId('board');
+    var dim = daysInMonth(viewYear, viewMonth), limit = elapsedLimit(), n = state.habits.length;
+    var weeksCount = Math.ceil(dim/7);
+    if(viewWeek > weeksCount-1) viewWeek = weeksCount-1;
+    if(viewWeek < 0) viewWeek = 0;
+    var compact = (boardMode==='month' && isPhone());
+    var segBtns = byId('segMode').querySelectorAll('button');
+    for(var s=0;s<segBtns.length;s++){
+      segBtns[s].classList.toggle('active', segBtns[s].getAttribute('data-mode')===boardMode);
+    }
+    var tabs = '';
+    if(boardMode==='week'){
+      for(var w=0; w<weeksCount; w++){
+        tabs += '<button type="button" data-week="'+w+'" style="--wc:'+WEEK_COLORS[w]+'" class="'+(w===viewWeek?'active':'')+'">Week '+(w+1)+'</button>';
+      }
+    }
+    byId('weekTabs').innerHTML = tabs;
+    byId('boardHint').textContent = compact ? 'Whole month in big, easy tap targets'
+      : (boardMode==='month' ? 'Full month fits on screen' : 'Swipe between weeks with the tabs');
+
+    if(n===0){
+      board.className = 'board';
+      board.innerHTML = '<div class="empty">Your dashboard is empty.<br>Add a habit above to get started. 🌱</div>';
+      byId('gridFoot').innerHTML = '';
+      return;
+    }
+
+    var html = '', d, h;
+    if(compact){
+      board.className = 'board compact';
+      for(h=0; h<n; h++){
+        var hb = state.habits[h];
+        var st = habitMonthStats(hb.id, viewYear, viewMonth);
+        html += '<div class="mblock"><div class="mhead"><span class="dot" style="background:'+hb.color+'"></span>'+
+                '<span class="mname">'+esc(hb.name)+'</span>'+
+                '<span class="b-pct" style="background:'+hb.color+'22;color:'+hb.color+'">'+st.pct+'%</span></div>'+
+                '<div class="mgrid">';
+        for(var w2=0; w2<weeksCount; w2++){
+          var ws2 = w2*7+1, we2 = Math.min(dim,(w2+1)*7);
+          html += '<div class="mwlabel" style="color:'+WEEK_COLORS[w2]+'">W'+(w2+1)+'</div>';
+          for(d=ws2; d<=ws2+6; d++){
+            if(d>we2){ html += '<div class="mdaycol"></div>'; continue; }
+            html += '<div class="mdaycol"><span class="mnum">'+d+'</span>'+cellButton(hb,d)+'</div>';
+          }
+        }
+        html += '</div></div>';
+      }
+      board.innerHTML = html;
+      renderGridFoot();
+      return;
+    }
+
+    var days = [];
+    if(boardMode==='month'){ for(d=1; d<=dim; d++) days.push(d); }
+    else { var ws = viewWeek*7+1, we = Math.min(dim,(viewWeek+1)*7); for(d=ws; d<=we; d++) days.push(d); }
+
+    board.className = 'board ' + boardMode;
+    board.style.setProperty('--n', days.length);
+
+    html += '<div class="b-row"><div class="b-corner"></div>';
+    if(boardMode==='month'){
+      for(var w3=0; w3<5; w3++){
+        var bws = w3*7+1, bwe = Math.min(dim,(w3+1)*7);
+        if(bws>dim) break;
+        html += '<div class="b-band" style="grid-column:'+(bws+1)+' / span '+(bwe-bws+1)+';background:'+WEEK_COLORS[w3]+'">WEEK '+(w3+1)+'</div>';
+      }
+    }else{
+      html += '<div class="b-band" style="grid-column:2 / span '+days.length+';background:'+WEEK_COLORS[viewWeek]+'">WEEK '+(viewWeek+1)+'</div>';
+    }
+    html += '<div class="b-corner" style="text-align:center">%</div></div>';
+    html += '<div class="b-row"><div class="b-corner">'+(boardMode==='month' ? 'HABITS ↓ / DAYS →' : 'HABIT ↓ / WEEK '+(viewWeek+1)+' →')+'</div>';
+    for(var i2=0;i2<days.length;i2++){
+      var dd = days[i2];
+      var isToday = isViewingCurrent() && dd===today.getDate();
+      html += '<div class="b-daynum'+(isToday?' today':'')+'">'+dd+'</div>';
+    }
+    html += '<div class="b-corner"></div></div>';
+
+    for(h=0; h<n; h++){
+      var hb2 = state.habits[h];
+      var st2 = habitMonthStats(hb2.id, viewYear, viewMonth);
+      html += '<div class="b-row"><div class="b-name"><span class="dot" style="background:'+hb2.color+'"></span><span class="htxt" title="'+esc(hb2.name)+'">'+esc(hb2.name)+'</span></div>';
+      for(var i3=0;i3<days.length;i3++){ html += cellButton(hb2, days[i3]); }
+      html += '<div class="b-pct" style="background:'+hb2.color+'22;color:'+hb2.color+'">'+st2.pct+'%</div></div>';
+    }
+    board.innerHTML = html;
+    renderGridFoot();
+  }
+
+  function renderGridFoot(){
+    var t = monthTotals();
+    var avg = t.possible>0 ? Math.round(t.total/t.possible*100) : 0;
+    byId('gridFoot').innerHTML =
+      '<span>📅 '+MONTH_NAMES[viewMonth]+' '+viewYear+'</span>'+
+      '<span>✅ '+t.total+' checkmarks</span>'+
+      '<span>🎯 '+avg+'% average</span>'+
+      '<span>💡 Today’s column is outlined</span>';
+  }
+
+  function renderSide(){
+    var n = state.habits.length;
+    var topEl = byId('topList'), bodyEl = byId('dailyBody');
+    if(n===0){
+      topEl.innerHTML = '<div class="empty">Nothing to rank yet.</div>';
+      bodyEl.innerHTML = '<tr><td colspan="4" class="empty">—</td></tr>';
+      return;
+    }
+    var rows = state.habits.map(function(hb){
+      var st = habitMonthStats(hb.id, viewYear, viewMonth);
+      return {hb:hb, st:st, streak: isViewingCurrent() ? currentStreakFromSet(habitDaySet(hb.id)) : monthStreak(hb.id, viewYear, viewMonth)};
+    });
+    rows.sort(function(a,b){ return b.st.pct - a.st.pct; });
+    topEl.innerHTML = rows.slice(0,7).map(function(r,i){
+      return '<div class="topitem"><span class="rank">'+(i+1)+'</span>'+
+        '<span class="tn">'+esc(r.hb.name)+'</span>'+
+        '<span class="bar"><i style="width:'+r.st.pct+'%;background:'+r.hb.color+'"></i></span>'+
+        '<b>'+r.st.pct+'%</b></div>';
+    }).join('');
+    bodyEl.innerHTML = rows.map(function(r){
+      return '<tr><td>'+esc(r.hb.name)+'</td><td>'+r.st.pct+'%</td><td>'+r.st.done+'/'+r.st.goal+'</td>'+
+        '<td>'+r.streak+' <span class="fire">'+(r.streak>=3?'🔥':'')+'</span></td></tr>';
+    }).join('');
+  }
+
+  function renderAll(){
+    byId('monthLabel').textContent = MONTH_NAMES[viewMonth]+' '+viewYear;
+    renderStats(); renderWeekRings(); renderChips(); renderBoard(); renderSide(); updateCharts();
+  }
+
+  /* ===== ADD / DELETE HABITS ===== */
+  function addHabitFromInput(){
+    var input = byId('habitInput');
+    var val = input.value.replace(/\s+/g,' ').trim();
+    if(!val){ input.focus(); toast('Please type a habit name first', '✍️'); return; }
+    var id = 'h'+Date.now()+''+Math.floor(Math.random()*9999);
+    state.habits.push({id:id, name:val, color:HABIT_COLORS[state.habits.length % HABIT_COLORS.length]});
+    state.checks[id] = {};
+    input.value = '';
+    saveState(state); renderAll();
+    toast('“'+val+'” added', '🎉');
+    input.focus();
+  }
+  function deleteHabit(id){
+    var hb = null, i;
+    for(i=0;i<state.habits.length;i++){ if(state.habits[i].id===id) hb = state.habits[i]; }
+    askConfirm('Delete this habit?',
+      '“'+(hb?hb.name:'')+'” and all of its checkmarks will be permanently removed.',
+      'Delete', function(){
+        state.habits = state.habits.filter(function(x){ return x.id!==id; });
+        delete state.checks[id];
+        saveState(state); renderAll();
+        toast('Habit deleted', '🗑️');
+      }, '🗑️');
+  }
+  byId('addBtn').addEventListener('click', function(e){ e.preventDefault(); addHabitFromInput(); });
+  byId('habitInput').addEventListener('keydown', function(e){
+    if(e.key==='Enter' || e.keyCode===13){ e.preventDefault(); addHabitFromInput(); }
+  });
+  byId('chips').addEventListener('click', function(e){
+    var btn = e.target.closest ? e.target.closest('.cdel') : null;
+    if(btn) deleteHabit(btn.getAttribute('data-del'));
+  });
+  byId('topAdd').addEventListener('click', function(){
+    var input = byId('habitInput');
+    try{ input.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){ input.scrollIntoView(); }
+    setTimeout(function(){ try{ input.focus({preventScroll:true}); }catch(e){ input.focus(); } }, 300);
+  });
+
+  /* ===== BOARD INTERACTIONS ===== */
+  byId('segMode').addEventListener('click', function(e){
+    var btn = e.target.closest ? e.target.closest('button[data-mode]') : null;
+    if(!btn) return;
+    userPref = btn.getAttribute('data-mode');
+    boardMode = userPref;
+    renderBoard();
+  });
+  byId('weekTabs').addEventListener('click', function(e){
+    var btn = e.target.closest ? e.target.closest('button[data-week]') : null;
+    if(!btn) return;
+    viewWeek = parseInt(btn.getAttribute('data-week'),10);
+    renderBoard();
+  });
+  byId('board').addEventListener('click', function(e){
+    var cell = e.target.closest ? e.target.closest('.b-cellbtn') : null;
+    if(!cell || cell.disabled) return;
+    var hid = cell.getAttribute('data-h'), d = parseInt(cell.getAttribute('data-d'),10);
+    if(!state.checks[hid]) state.checks[hid] = {};
+    var k = dateKey(viewYear, viewMonth, d);
+    var nowOn;
+    if(state.checks[hid][k]){ delete state.checks[hid][k]; nowOn=false; }
+    else { state.checks[hid][k] = 1; nowOn=true; }
+    saveState(state);
+    renderStats(); renderWeekRings(); renderSide(); renderBoard(); updateCharts();
+    if(nowOn && isViewingCurrent() && d===today.getDate() && state.habits.length>0){
+      var allDone = true, i;
+      for(i=0;i<state.habits.length;i++){
+        if(!isChecked(state.habits[i].id, today.getFullYear(), today.getMonth(), today.getDate())){ allDone=false; break; }
+      }
+      if(allDone && !perfectDayFlag){ perfectDayFlag = true; toast('Perfect day! All habits completed', '🏆'); }
+    }
+    if(!nowOn) perfectDayFlag = false;
+  });
+
+  byId('prevM').addEventListener('click', function(){
+    viewMonth--; if(viewMonth<0){ viewMonth=11; viewYear--; } perfectDayFlag=false; renderAll();
+  });
+  byId('nextM').addEventListener('click', function(){
+    viewMonth++; if(viewMonth>11){ viewMonth=0; viewYear++; } perfectDayFlag=false; renderAll();
+  });
+
+  /* ===== PDF GENERATION ===== */
+  var pdfBlobUrl = null, pdfBlob = null, pdfPublicUrl = null;
+  function pdfFileName(){ return 'TrackKar-Report-'+MONTH_NAMES[viewMonth]+'-'+viewYear+'.pdf'; }
+
+  function pdfTable(doc, x, y, widths, headers, rows){
+    var pageH = doc.internal.pageSize.getHeight();
+    var totalW = widths.reduce(function(a,b){return a+b;},0);
+    function drawRow(cells, isHead){
+      if(y > pageH-60){ doc.addPage(); y = 50; }
+      var rh = isHead ? 20 : 17;
+      doc.setFillColor(isHead?240:250, isHead?236:248, isHead?246:250);
+      doc.rect(x, y, totalW, rh, 'F');
+      doc.setDrawColor(222,216,230);
+      doc.rect(x, y, totalW, rh, 'S');
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', isHead?'bold':'normal');
+      doc.setTextColor(isHead?80:45, isHead?74:43, isHead?92:55);
+      var cx = x;
+      for(var i=0;i<cells.length;i++){
+        var lines = doc.splitTextToSize(String(cells[i]), widths[i]-8);
+        doc.text(lines[0] || '', cx+4, y+11.5);
+        cx += widths[i];
+      }
+      y += rh;
+    }
+    drawRow(headers, true);
+    for(var r=0;r<rows.length;r++) drawRow(rows[r], false);
+    return y;
+  }
+
+  function makePdf(){
+    var JsPDF = window.jspdf.jsPDF;
+    var doc = new JsPDF({unit:'pt', format:'a4'});
+    var W = doc.internal.pageSize.getWidth(), M = 40;
+    var t = monthTotals(), h, d, w;
+    doc.setFillColor(91,17,82); doc.rect(0,0,W,88,'F');
+    doc.setFillColor(141,32,137); doc.rect(0,88,W,4,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold'); doc.setFontSize(20);
+    doc.text('TrackKar Habit Report', M, 42);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    doc.text(MONTH_NAMES[viewMonth]+' '+viewYear+'   |   Generated '+new Date().toDateString(), M, 62);
+
+    var y = 116;
+    var best = 0, todayDone = 0;
+    for(h=0;h<t.n;h++){
+      var cs = currentStreakFromSet(habitDaySet(state.habits[h].id));
+      if(cs>best) best=cs;
+      if(isChecked(state.habits[h].id, today.getFullYear(), today.getMonth(), today.getDate())) todayDone++;
+    }
+    var overall = t.possible>0 ? Math.round(t.total/t.possible*100) : 0;
+    var stats = [[overall+'%','Overall progress'],[t.total+' / '+t.possible,'Checkmarks'],[best+' days','Best streak'],[todayDone+' / '+t.n,'Done today']];
+    var bw = (W-2*M-30)/4;
+    for(var i=0;i<4;i++){
+      var bx = M + i*(bw+10);
+      doc.setFillColor(248,245,250); doc.setDrawColor(226,220,234);
+      doc.roundedRect(bx, y, bw, 54, 6, 6, 'FD');
+      doc.setTextColor(25,23,34); doc.setFont('helvetica','bold'); doc.setFontSize(14);
+      doc.text(stats[i][0], bx+10, y+24);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(110,106,124);
+      doc.text(stats[i][1], bx+10, y+40);
+    }
+    y += 80;
+    doc.setTextColor(25,23,34); doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.text('Week-wise completion', M, y); y += 14;
+    var weekRows = [];
+    for(w=0; w<5; w++){
+      var ws = w*7+1, we = Math.min(daysInMonth(viewYear,viewMonth),(w+1)*7);
+      if(ws > daysInMonth(viewYear,viewMonth)) break;
+      var effEnd = Math.min(we, t.limit), daysCounted = Math.max(0, effEnd-ws+1);
+      var done = 0;
+      for(d=ws; d<=effEnd; d++){ for(h=0;h<t.n;h++){ if(isChecked(state.habits[h].id, viewYear, viewMonth, d)) done++; } }
+      var pos = t.n*daysCounted;
+      weekRows.push(['Week '+(w+1), String(done), String(pos), (pos>0? Math.round(done/pos*100)+'%':'-')]);
+    }
+    y = pdfTable(doc, M, y, [140,120,120,135], ['Week','Ticks','Possible','Completion'], weekRows);
+
+    y += 24;
+    doc.setTextColor(25,23,34); doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.text('Habit breakdown (day 1 - '+t.limit+')', M, y); y += 14;
+    var habitRows = [];
+    for(h=0;h<t.n;h++){
+      var hb = state.habits[h];
+      var st = habitMonthStats(hb.id, viewYear, viewMonth);
+      var streak = isViewingCurrent() ? currentStreakFromSet(habitDaySet(hb.id)) : monthStreak(hb.id, viewYear, viewMonth);
+      var dayStr = '';
+      for(d=1; d<=t.limit; d++){ dayStr += isChecked(hb.id, viewYear, viewMonth, d) ? 'X ' : '- '; }
+      habitRows.push([hb.name, String(st.done), String(st.goal), st.pct+'%', String(streak), dayStr.trim()]);
+    }
+    y = pdfTable(doc, M, y, [105,38,38,38,44,252], ['Habit','Done','Goal','%','Streak','Days (X=done, -=missed)'], habitRows);
+    if(y > doc.internal.pageSize.getHeight()-70){ doc.addPage(); y = 50; }
+    y += 22;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(140,136,150);
+    var lic = getLicense();
+    doc.text('TrackKar - Licensed to ' + (lic && lic.email || 'user') + '  |  Tier: ' + (licenseTier()||'—'), M, y);
+    return doc;
+  }
+
+  /* ===== PDF DELIVERY ===== */
+  var canShareFiles = false;
+  try{
+    canShareFiles = !!(navigator.canShare && navigator.share &&
+      navigator.canShare({files:[new File(['test'], 't.pdf', {type:'application/pdf'})]}));
+  }catch(e){ canShareFiles = false; }
+
+  function copyText(t){
+    if(navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
+    return new Promise(function(res, rej){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try{ document.execCommand('copy') ? res() : rej(new Error('copy failed')); }
+      catch(e){ rej(e); }
+      finally{ document.body.removeChild(ta); }
+    });
+  }
+
+  function openPdfOverlay(url, fname){
+    byId('pdfDl').href = url; byId('pdfDl').download = fname;
+    byId('pdfTab').href = url;
+    byId('pdfShare').style.display = canShareFiles ? 'flex' : 'none';
+    byId('linkResult').style.display = pdfPublicUrl ? 'block' : 'none';
+    byId('pdfEmbedBox').style.display = 'none';
+    byId('pdfNote').textContent = 'Your PDF is ready. Pick any method — at least one always works.';
+    byId('pdfOverlay').classList.add('show');
+  }
+  function closePdfOverlay(){
+    byId('pdfOverlay').classList.remove('show');
+    try{ byId('pdfFrame').removeAttribute('src'); }catch(e){}
+  }
+  byId('pdfClose').addEventListener('click', closePdfOverlay);
+  byId('pdfOverlay').addEventListener('click', function(e){ if(e.target===this) closePdfOverlay(); });
+
+  function uploadTemp(blob, fname){
+    var fd = new FormData();
+    fd.append('file', blob, fname);
+    return fetch('https://tmpfiles.org/api/v1/upload', {method:'POST', body:fd})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(j && j.data && j.data.url) return j.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+        throw new Error('bad');
+      });
+  }
+  function uploadTemp2(blob, fname){
+    var fd = new FormData();
+    fd.append('file', blob, fname);
+    return fetch('https://file.io', {method:'POST', body:fd})
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if(j && j.link) return j.link; throw new Error('bad'); });
+  }
+  byId('pdfLink').addEventListener('click', function(){
+    if(!pdfBlob){ toast('PDF not ready - tap 📄 PDF again', '⚠️'); return; }
+    var btn = byId('pdfLink');
+    btn.disabled = true; btn.innerHTML = '⏳&nbsp; Uploading…';
+    uploadTemp(pdfBlob, pdfFileName())
+      .catch(function(){ return uploadTemp2(pdfBlob, pdfFileName()); })
+      .then(function(url){
+        pdfPublicUrl = url;
+        byId('linkResult').style.display = 'block';
+        var out = byId('pdfLinkOut');
+        out.href = url; out.style.display = 'flex';
+        out.textContent = '🔗 ' + (url.length>44 ? url.slice(0,44)+'…' : url);
+        out.title = url;
+        var qr = byId('pdfQr');
+        qr.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(url);
+        qr.style.display = 'block';
+        btn.disabled = false; btn.innerHTML = '🔗&nbsp; Create download link + QR';
+        toast('Link + QR ready', '🔗');
+      })
+      .catch(function(){
+        btn.disabled = false; btn.innerHTML = '🔗&nbsp; Create download link + QR';
+        toast('Upload failed — try Share / Download', '⚠️');
+      });
+  });
+  byId('pdfCopy').addEventListener('click', function(){
+    if(!pdfPublicUrl){ toast('Create the link first', '⚠️'); return; }
+    copyText(pdfPublicUrl).then(function(){ toast('Link copied', '📋'); })
+      .catch(function(){ toast('Copy blocked — long-press the link', '⚠️'); });
+  });
+  byId('pdfShare').addEventListener('click', function(){
+    if(!pdfBlob){ toast('PDF not ready', '⚠️'); return; }
+    try{
+      var file = new File([pdfBlob], pdfFileName(), {type:'application/pdf'});
+      navigator.share({files:[file], title:'TrackKar Report', text:'My habit report'})
+        .then(function(){ toast('PDF saved via share', '📤'); closePdfOverlay(); })
+        .catch(function(err){ if(!err || err.name!=='AbortError') toast('Share failed', '⚠️'); });
+    }catch(e){ toast('Share not supported', '⚠️'); }
+  });
+  byId('pdfPrint').addEventListener('click', function(){
+    closePdfOverlay();
+    try{ buildPrintReport(); setTimeout(function(){ window.print(); }, 250); }
+    catch(e){ toast('Printing blocked', '⚠️'); }
+  });
+
+  byId('pdfBtn').addEventListener('click', function(){
+    if(!(window.jspdf && window.jspdf.jsPDF)){
+      toast('PDF engine loading…', '⏳');
+      setTimeout(function(){
+        if(window.jspdf && window.jspdf.jsPDF) byId('pdfBtn').click();
+        else{ try{ buildPrintReport(); window.print(); }catch(e){ toast('PDF not available', '⚠️'); } }
+      }, 1000);
+      return;
+    }
+    try{
+      var doc = makePdf();
+      var fname = pdfFileName();
+      pdfBlob = doc.output('blob');
+      if(pdfBlobUrl){ try{ URL.revokeObjectURL(pdfBlobUrl); }catch(e){} }
+      pdfBlobUrl = URL.createObjectURL(pdfBlob);
+      var saved = false;
+      try{ doc.save(fname); saved = true; }catch(e){ saved = false; }
+      if(saved){
+        toast('PDF downloaded: '+fname, '📄');
+      }else{
+        openPdfOverlay(pdfBlobUrl, fname);
+      }
+    }catch(e){
+      try{ buildPrintReport(); window.print(); }
+      catch(e2){ toast('Could not create PDF', '⚠️'); }
+    }
+  });
+
+  /* ===== PRINT ===== */
+  function buildPrintReport(){
+    var dim = daysInMonth(viewYear, viewMonth), t = monthTotals(), h, d, w;
+    var overall = t.possible>0 ? Math.round(t.total/t.possible*100) : 0;
+    var best = 0, todayDone = 0;
+    for(h=0;h<t.n;h++){
+      var cs = currentStreakFromSet(habitDaySet(state.habits[h].id));
+      if(cs>best) best=cs;
+      if(isChecked(state.habits[h].id, today.getFullYear(), today.getMonth(), today.getDate())) todayDone++;
+    }
+    var gen = new Date();
+    var html = '<div class="pr-head"><div class="pr-logo">✓</div><div>'+
+      '<h1>TrackKar Habit Report</h1>'+
+      '<div class="pr-meta">'+MONTH_NAMES[viewMonth]+' '+viewYear+' &nbsp;•&nbsp; Generated '+gen.getDate()+' '+MONTH_NAMES[gen.getMonth()]+' '+gen.getFullYear()+'</div></div></div>';
+    html += '<div class="pr-stats">'+
+      '<div class="pr-stat"><b>'+overall+'%</b><span>Overall progress</span></div>'+
+      '<div class="pr-stat"><b>'+t.total+' / '+t.possible+'</b><span>Checkmarks</span></div>'+
+      '<div class="pr-stat"><b>'+best+' days</b><span>Best streak</span></div>'+
+      '<div class="pr-stat"><b>'+todayDone+' / '+t.n+'</b><span>Done today</span></div></div>';
+    html += '<h2>Week-wise</h2><table class="pr-table"><tr><th>Week</th><th>Ticks</th><th>Possible</th><th>%</th></tr>';
+    for(w=0; w<5; w++){
+      var ws = w*7+1, we = Math.min(dim,(w+1)*7);
+      if(ws>dim) break;
+      var effEnd = Math.min(we, t.limit), daysCounted = Math.max(0, effEnd-ws+1);
+      var done = 0;
+      for(d=ws; d<=effEnd; d++){ for(h=0;h<t.n;h++){ if(isChecked(state.habits[h].id, viewYear, viewMonth, d)) done++; } }
+      var pos = t.n*daysCounted;
+      html += '<tr><td>Week '+(w+1)+'</td><td>'+done+'</td><td>'+pos+'</td><td>'+(pos>0? Math.round(done/pos*100)+'%':'—')+'</td></tr>';
+    }
+    html += '</table><h2>Habit breakdown</h2><table class="pr-table"><tr><th>Habit</th><th>%</th><th>Done</th><th>Streak</th><th>Days</th></tr>';
+    for(h=0;h<t.n;h++){
+      var hb = state.habits[h];
+      var st = habitMonthStats(hb.id, viewYear, viewMonth);
+      var streak = isViewingCurrent() ? currentStreakFromSet(habitDaySet(hb.id)) : monthStreak(hb.id, viewYear, viewMonth);
+      var dayStr = '';
+      for(d=1; d<=t.limit; d++){ dayStr += isChecked(hb.id, viewYear, viewMonth, d) ? '✓' : '·'; }
+      html += '<tr><td>'+esc(hb.name)+'</td><td>'+st.pct+'%</td><td>'+st.done+'</td><td>'+streak+'</td><td class="pr-days">'+dayStr+'</td></tr>';
+    }
+    html += '</table><div class="pr-foot">TrackKar — automatic habit tracker • ✓ = completed, · = missed</div>';
+    byId('printReport').innerHTML = html;
+  }
+
+  /* ===== DOWNLOAD / BACKUP ===== */
+  function downloadBlob(filename, blob){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ if(a.parentNode) a.parentNode.removeChild(a); URL.revokeObjectURL(url); }, 500);
+  }
+  byId('downloadApp').addEventListener('click', function(){
+    try{
+      var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      downloadBlob('TrackKar-Habit-Tracker.html', new Blob([html], {type:'text/html'}));
+      toast('App file downloaded', '⬇️');
+    }catch(e){ toast('Download blocked', '⚠️'); }
+  });
+  byId('exportData').addEventListener('click', function(){
+    try{
+      downloadBlob('trackkar-backup.json', new Blob([JSON.stringify(state,null,2)], {type:'application/json'}));
+      toast('Backup downloaded', '📦');
+    }catch(e){ toast('Download blocked', '⚠️'); }
+  });
+  byId('importBtn').addEventListener('click', function(){ byId('importFile').click(); });
+  byId('importFile').addEventListener('change', function(e){
+    var f = e.target.files[0]; if(!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var p = JSON.parse(reader.result);
+        if(p && Array.isArray(p.habits) && p.checks){
+          state = p; saveState(state); renderAll(); toast('Backup restored', '📦');
+        } else toast('Invalid backup file', '⚠️');
+      }catch(err){ toast('Could not read file', '⚠️'); }
+    };
+    reader.readAsText(f);
+    e.target.value = '';
+  });
+  byId('resetDemo').addEventListener('click', function(){
+    askConfirm('Restore demo data?', 'Your current data will be replaced.', 'Restore', function(){
+      state = seedDemo(); saveState(state); renderAll();
+      toast('Demo data restored', '✨');
+    }, '✨');
+  });
+  byId('clearAll').addEventListener('click', function(){
+    askConfirm('Clear all data?', 'Every habit will be deleted.', 'Clear everything', function(){
+      state = {habits:[], checks:{}};
+      saveState(state); renderAll();
+      toast('All data cleared', '🧹');
+    }, '🧹');
+  });
+
+  /* =====================================================================
+     💳 STATIC PAYMENT FLOW (UPI QR + WhatsApp / Email fulfillment)
+  ===================================================================== */
+  var currentBuyTier = null, currentOrderId = null;
+
+  function showShopPage(){
+    byId('shopPage').style.display = 'block';
+    byId('appPage').style.display = 'none';
+    byId('monthNav').style.display = 'none';
+    byId('pdfBtn').style.display = 'none';
+    byId('topAdd').style.display = 'none';
+    byId('buyBtn').style.display = 'inline-flex';
+    updateLicenseBar();
+  }
+  function showAppPage(){
+    byId('shopPage').style.display = 'none';
+    byId('appPage').style.display = 'block';
+    byId('monthNav').style.display = 'flex';
+    byId('pdfBtn').style.display = 'inline-flex';
+    byId('topAdd').style.display = 'inline-flex';
+    byId('buyBtn').style.display = 'none';
+    var tier = licenseTier();
+    byId('footerLicenseTier').textContent = TIERS[tier] ? TIERS[tier].name : (tier || '—');
+    buildCharts();
+    renderAll();
+  }
+
+  function updateLicenseBar(){
+    var bar = byId('licenseBar');
+    var lic = getLicense();
+    if(!lic || !lic.key){ bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    bar.classList.add('licensed');
+    byId('licenseKeyDisplay').textContent = lic.key;
+    var tier = TIERS[lic.tier];
+    byId('licenseLabel').textContent = (tier ? tier.name : 'Licensed') + ' License';
+    byId('licenseSub').textContent = lic.demo ? 'Demo / trial access' : 'Activated ' + new Date(lic.purchasedAt).toLocaleDateString();
+  }
+
+  function openPayModal(tier){
+    currentBuyTier = tier;
+    var t = TIERS[tier];
+    currentOrderId = 'TK' + Date.now().toString().slice(-8);
+    byId('payTierName').textContent = t.name;
+    byId('payPrice').textContent = '₹' + t.price;
+    byId('orderIdTxt').textContent = currentOrderId;
+    var upiString = 'upi://pay?pa=' + encodeURIComponent(UPI_ID) + '&pn=' + encodeURIComponent('TrackKar') +
+                    '&am=' + t.price + '&cu=INR&tn=' + encodeURIComponent(currentOrderId);
+    byId('upiQr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(upiString);
+    byId('upiDeepLink').href = upiString;
+    var cf = CASHFREE_LINKS[tier];
+    var cfBtn = byId('cfLinkBtn');
+    if(cf && cf.length > 5){ cfBtn.href = cf; cfBtn.style.display = 'flex'; } else { cfBtn.style.display = 'none'; }
+    var msg = 'Hello! Maine TrackKar ' + t.name + ' (Rs.' + t.price + ') ke liye payment kar diya hai.\nOrder ID: ' + currentOrderId + '\nPlease meri license key bhejiye. Dhanyavad!';
+    byId('paidWhatsapp').setAttribute('data-wa', 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(msg));
+    byId('paidEmail').setAttribute('data-mail', 'mailto:' + SUPPORT_EMAIL + '?subject=' + encodeURIComponent('Payment ' + currentOrderId + ' — ' + t.name) + '&body=' + encodeURIComponent(msg));
+    byId('payOverlay').classList.add('show');
+  }
+  function closePayOverlay(){ byId('payOverlay').classList.remove('show'); currentBuyTier = null; }
+  byId('payCancel').addEventListener('click', closePayOverlay);
+  byId('payOverlay').addEventListener('click', function(e){ if(e.target===this) closePayOverlay(); });
+
+  byId('paidWhatsapp').addEventListener('click', function(){
+    if(!currentBuyTier) return;
+    if(UPI_ID.indexOf('PASTE') === 0){
+      toast('⚠️ Test mode: UPI ID set nahi hai — payment simulate', '⏳');
+      setTimeout(function(){ completePurchase(currentBuyTier, 'TEST-' + currentOrderId); }, 800);
+      closePayOverlay();
+      return;
+    }
+    window.open(this.getAttribute('data-wa'), '_blank');
+    closePayOverlay();
+    toast('Receipt bhej diya? Seller 24h me license key bhejega 🔑', '✅');
+  });
+  byId('paidEmail').addEventListener('click', function(){
+    if(!currentBuyTier) return;
+    window.location.href = this.getAttribute('data-mail');
+    closePayOverlay();
+    toast('Email draft khula — send karo, seller key bhejega 🔑', '');
+  });
+  byId('haveKeyBtn').addEventListener('click', function(){
+    closePayOverlay();
+    openLicenseModal();
+  });
+  document.querySelectorAll('[data-buy]').forEach(function(btn){
+    btn.addEventListener('click', function(){ openPayModal(btn.getAttribute('data-buy')); });
+  });
+
+  function completePurchase(tier, paymentId){
+    var key = generateKey(tier);
+    var lic = { key:key, tier:tier, demo:false, paymentId:paymentId||null, purchasedAt:new Date().toISOString(), email:'customer' };
+    setLicense(lic);
+    closePayOverlay();
+    toast('🎉 License activated: ' + key, '✅');
+    showSuccessModal(lic);
+  }
+
+  function showSuccessModal(lic){
+    var t = TIERS[lic.tier];
+    byId('licenseModalIcon').textContent = '🎉';
+    byId('licenseModalTitle').textContent = 'License activated!';
+    byId('licenseModalDesc').innerHTML = 'Your <b>' + t.name + '</b> license:<br><br>' +
+      '<b style="font-family:monospace;letter-spacing:1px;font-size:14px;background:var(--soft);padding:8px 14px;border-radius:8px;display:inline-block">' + esc(lic.key) + '</b><br><br>' +
+      'Key safe rakho. "Open App" dabao aur use karna shuru karo!';
+    byId('licenseInput').style.display = 'none';
+    byId('licenseActivate').textContent = '🚀 Open App';
+    byId('licenseActivate').onclick = function(){
+      closeLicenseOverlay();
+      byId('licenseInput').style.display = 'block';
+      byId('licenseActivate').textContent = 'Activate';
+      byId('licenseActivate').onclick = activateLicense;
+      showAppPage();
+    };
+    byId('licenseOverlay').classList.add('show');
+  }
+
+  /* ===== LICENSE KEY MODAL ===== */
+  function openLicenseModal(){
+    byId('licenseModalIcon').textContent = '🔑';
+    byId('licenseModalTitle').textContent = 'Enter your license key';
+    byId('licenseModalDesc').innerHTML = 'Seller se mili key paste karo, ya <code style="background:var(--soft);padding:2px 8px;border-radius:6px;font-family:monospace">' + DEMO_KEY + '</code> se free trial.';
+    byId('licenseInput').value = '';
+    byId('licenseInput').style.display = 'block';
+    byId('licenseActivate').textContent = 'Activate';
+    byId('licenseActivate').onclick = activateLicense;
+    byId('licenseOverlay').classList.add('show');
+    setTimeout(function(){ byId('licenseInput').focus(); }, 300);
+  }
+  function closeLicenseOverlay(){ byId('licenseOverlay').classList.remove('show'); }
+  byId('licenseCancel').addEventListener('click', closeLicenseOverlay);
+  byId('licenseOverlay').addEventListener('click', function(e){ if(e.target===this) closeLicenseOverlay(); });
+
+  function activateLicense(){
+    var key = byId('licenseInput').value;
+    var valid = validateKey(key);
+    if(!valid){ toast('Invalid license key. Try ' + DEMO_KEY + ' for demo.', '❌'); return; }
+    var lic = { key:key.toUpperCase(), tier:valid.tier, demo:valid.demo, paymentId:valid.demo?'demo':null, purchasedAt:new Date().toISOString(), email:valid.demo?'demo':'customer' };
+    setLicense(lic);
+    closeLicenseOverlay();
+    var t = TIERS[valid.tier];
+    toast(valid.demo ? 'Demo activated (' + t.name + ')' : 'License activated: ' + t.name, '🔓');
+    showAppPage();
+  }
+
+  /* ===== SELLER PANEL (logo par 5 tap → PIN → key generator) ===== */
+  var logoTaps = 0, logoTimer = null;
+  byId('brandLogo').addEventListener('click', function(){
+    logoTaps++; clearTimeout(logoTimer);
+    logoTimer = setTimeout(function(){ logoTaps = 0; }, 2500);
+    if(logoTaps >= 5){ logoTaps = 0; sellerPanel(); }
+  });
+  function sellerPanel(){
+    var pin = prompt('Seller PIN:');
+    if(pin !== SELLER_PIN){ toast('Galat PIN', '❌'); return; }
+    var tier = (prompt('Tier likho: basic / pro / lifetime', 'pro') || '').toLowerCase().trim();
+    if(!TIERS[tier]){ toast('Invalid tier', '❌'); return; }
+    var key = generateKey(tier);
+    copyText(key).then(function(){ toast('Key copied: ' + key, '🔑'); }, function(){ toast('Key: ' + key, '🔑'); });
+  }
+
+  /* ===== MISC BUTTONS ===== */
+  byId('buyBtn').addEventListener('click', function(){
+    document.querySelector('.pricing-grid').scrollIntoView({behavior:'smooth'});
+  });
+  byId('ctaBuyBtn').addEventListener('click', function(){
+    document.querySelector('.pricing-grid').scrollIntoView({behavior:'smooth'});
+  });
+  byId('tryDemoBtn').addEventListener('click', function(){
+    openLicenseModal();
+    byId('licenseInput').value = DEMO_KEY;
+  });
+  byId('demoKeyCode').addEventListener('click', function(){
+    copyText(DEMO_KEY).then(function(){ toast('Demo key copied', '📋'); });
+  });
+  byId('enterAppBtn').addEventListener('click', function(){ showAppPage(); });
+  byId('revokeBtn').addEventListener('click', function(){
+    askConfirm('Sign out?', 'Your license will be removed from this browser. You can activate it again anytime.', 'Sign out', function(){
+      clearLicense(); updateLicenseBar(); showShopPage(); toast('Signed out', '🔒');
+    }, '🔒');
+  });
+  byId('manageLicenseBtn').addEventListener('click', function(){
+    var lic = getLicense();
+    if(!lic){ openLicenseModal(); return; }
+    askConfirm('Manage license',
+      'License: ' + lic.key + '\nTier: ' + (TIERS[lic.tier] ? TIERS[lic.tier].name : lic.tier) + '\n\nSign out karna hai ya nayi key daalni hai?',
+      'Sign out',
+      function(){ clearLicense(); updateLicenseBar(); showShopPage(); toast('Signed out', '🔒'); },
+      '🔑'
+    );
+  });
+
+  /* ===== RESPONSIVE ===== */
+  var resizeTimer = null, lastCompact = isPhone();
+  window.addEventListener('resize', function(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function(){
+      var m = userPref || autoMode();
+      var c = isPhone();
+      if(m !== boardMode || c !== lastCompact){
+        boardMode = m; lastCompact = c;
+        if(hasLicense()) renderBoard();
+      }
+    }, 160);
+  });
+
+  /* ===== REVEAL ===== */
+  function initReveal(){
+    var els = document.querySelectorAll('.rev'), i;
+    function showAll(){ for(i=0;i<els.length;i++) els[i].classList.add('in'); }
+    if(!('IntersectionObserver' in window)){ showAll(); return; }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+    }, {threshold:.06});
+    for(i=0;i<els.length;i++) io.observe(els[i]);
+    setTimeout(showAll, 1600);
+  }
+
+  /* ===== INIT ===== */
+  try{
+    byId('themeIco').textContent = isDark() ? '☀️' : '🌙';
+    if(hasLicense()){ showAppPage(); } else { showShopPage(); }
+    initReveal();
+    if(!storageOk) toast('Browser blocks saving — data lasts this session only', '⚠️');
+  }catch(err){
+    try{ showShopPage(); initReveal(); }catch(e2){}
+  }
+
+})();
+</script>
+</body>
+</html>

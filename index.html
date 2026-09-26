@@ -16,7 +16,6 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/poppins@latest/700.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<!-- 100% static site: koi payment SDK / server script nahi chahiye -->
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   :root{
@@ -550,7 +549,7 @@
       </div>
 
       <div class="demo-banner rev">
-        <span>🎁 <b>Free trial:</b> Use demo key <code id="demoKeyCode">DEMO2026</code> to unlock the full app and test every feature.</span>
+        <span>🎁 <b>Free trial:</b> Use demo key <code id="demoKeyCode">DEMO2026</code> for a limited-time full access trial.</span>
         <button class="btn btn-ghost" id="tryDemoBtn" type="button">Try Demo</button>
       </div>
 
@@ -647,7 +646,7 @@
         <details class="rev"><summary>Can I use it on multiple devices?</summary><p>Basic: 1 device. Pro: up to 3 devices. Lifetime: unlimited devices. Use Backup/Restore to move your data anywhere.</p></details>
         <details class="rev"><summary>What payment methods do you accept?</summary><p>Any UPI app (GPay, PhonePe, Paytm), plus cards & wallets via the optional Cashfree link. Simple and direct.</p></details>
         <details class="rev"><summary>What if I'm not satisfied?</summary><p>30-day no-questions-asked refund. Message the seller on WhatsApp with your order ID.</p></details>
-        <details class="rev"><summary>Can I try it before buying?</summary><p>Yes! Use demo key <code style="background:var(--soft);padding:2px 8px;border-radius:6px;font-family:monospace">DEMO2026</code> to unlock the full app with no payment required.</p></details>
+        <details class="rev"><summary>Can I try it before buying?</summary><p>Yes! Use demo key <code style="background:var(--soft);padding:2px 8px;border-radius:6px;font-family:monospace">DEMO2026</code> — full access for a limited trial period.</p></details>
       </section>
 
       <section class="cta-section rev">
@@ -780,14 +779,16 @@
   </div>
 </div>
 
-<!-- PAYMENT MODAL (100% static: UPI QR + WhatsApp fulfillment) -->
+<!-- PAYMENT MODAL -->
 <div class="overlay" id="payOverlay" role="dialog" aria-modal="true">
   <div class="modal">
     <div class="mico gold">🛒</div>
     <h3>Pay <b id="payPrice">₹29</b> — <span id="payTierName">Pro</span> <span style="font-size:12px;color:var(--muted)">(Order: <b id="orderIdTxt">—</b>)</span></h3>
     <p id="payDesc">Step 1: UPI se pay karo → Step 2: "I have paid" dabao → seller verify karke license key bhejega (24h).</p>
     <img id="upiQr" alt="UPI QR" style="width:170px;height:170px;border-radius:14px;border:1px solid var(--line);background:#fff;margin:0 auto 10px;display:block">
+    <div class="qrhint" style="margin-bottom:10px">⚠️ QR ko sirf <b>dusre phone ke camera scanner</b> se scan karo. Screenshot / gallery / share se limit-notice aa sakta hai.</div>
     <div class="upiidrow">UPI ID: <b id="upiIdTxt">—</b> <button class="btn btn-ghost" id="copyUpiBtn" type="button">📋 copy</button></div>
+    <div class="qrhint" style="margin:0 0 10px;background:var(--soft);border-radius:12px;padding:9px 12px;text-align:left">📋 <b>Manual method (100% works):</b> UPI ID copy karo → UPI app me "Pay to UPI ID" me paste karo → amount ₹<b id="manualAmt">9</b> daalo → Pay.</div>
     <div class="pdfopts"><a class="btn btn-primary" id="upiDeepLink">📱 Open in UPI app</a><a class="btn btn-ghost" id="cfLinkBtn" style="display:none" target="_blank" rel="noopener">💳 Pay with Cashfree</a><button class="btn btn-gold" id="paidWhatsapp" type="button">✅ I have paid — WhatsApp receipt</button></div>
     <div class="pdfopts" style="margin-top:8px"><button class="btn btn-ghost" id="paidEmail" type="button">📧 Receipt by email</button><button class="btn btn-ghost" id="haveKeyBtn" type="button">🔑 I have a license key</button><button class="btn btn-ghost" id="payCancel" type="button">Close</button></div>
   </div>
@@ -800,7 +801,7 @@
     <h3 id="licenseModalTitle">Enter your license key</h3>
     <p id="licenseModalDesc">Paste the key you received from the seller, or use <code style="background:var(--soft);padding:2px 8px;border-radius:6px;font-family:monospace">DEMO2026</code> for free trial.</p>
     <div class="license-input-row">
-      <input id="licenseInput" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
+      <input id="licenseInput" type="text" placeholder="XXXX-XXXX-XXXX-XX" autocomplete="off" spellcheck="false">
     </div>
     <div class="modalbtns">
       <button class="btn btn-ghost" id="licenseCancel" type="button">Cancel</button>
@@ -848,9 +849,6 @@
 
   /* =====================================================================
      💳 CONFIG — 100% STATIC SITE (GitHub Pages ready, koi server nahi)
-     Line 889: UPI ID | Line 890: WhatsApp | Line 891: Seller PIN | Line 892: Cashfree links (optional)
-     Payment flow: UPI QR / Cashfree link → buyer WhatsApp par receipt bhejta hai →
-     aap verify karke license key bhejte ho (seller panel: logo par 5 tap).
   ===================================================================== */
   var UPI_ID = '9322503074@ybl';
   var WHATSAPP_NUMBER = '9284167410';
@@ -865,15 +863,17 @@
     lifetime: {name:'Lifetime', price:49, desc:'Unlimited devices + source code', receipt:'trackkar-lifetime'}
   };
 
-  /* Demo license key — works as a free trial, gives Pro features */
+  /* ===== DEMO TRIAL CONFIG =====
+     DEMO_MINUTES = demo key kitne MINUTE chalega
+     10 = das minute | 60 = 1 ghanta | 1440 = 1 din | 10080 = 7 din */
   var DEMO_KEY = 'DEMO2026';
   var DEMO_TIER = 'pro';
-  var DEMO_MINUTES = 10;   // demo kitne MINUTE chalega (10, 30, 60...)
+  var DEMO_MINUTES = 10;
 
   /* =====================================================================
      DATA LAYER
   ===================================================================== */
-  var STORAGE_KEY = 'trackkar-habit-state-v13';
+  var STORAGE_KEY = 'trackkar-habit-state-v14';
   var THEME_KEY = 'trackkar-theme';
   var LICENSE_KEY = 'trackkar-license';
   var WEEK_COLORS = ['#6ea8ea','#f08cb4','#4fc8bc','#eebf3a','#a58fd8'];
@@ -895,7 +895,7 @@
   function safeSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ storageOk=false; return false; } }
   function safeDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
 
-  /* ===== LICENSE SYSTEM ===== */
+  /* ===== LICENSE SYSTEM (with demo expiry) ===== */
   function getLicense(){
     var raw = safeGet(LICENSE_KEY);
     if(!raw) return null;
@@ -904,28 +904,41 @@
   function setLicense(lic){ safeSet(LICENSE_KEY, JSON.stringify(lic)); }
   function clearLicense(){ safeDel(LICENSE_KEY); }
   function licenseExpired(l){
-    if(!l || !l.demo) return false;      // paid keys (TKBS/TKPR/TKLT) = lifetime, kabhi expire nahi
-    if(!l.expiresAt) return true;        // update se pehle wale purane demo = expire
+    if(!l || !l.demo) return false;          /* paid keys = lifetime, kabhi expire nahi */
+    if(!l.expiresAt) return true;            /* purane bina-timer wale demo = expire */
     return Date.now() > l.expiresAt;
   }
-  function hasLicense(){ var l = getLicense(); if(licenseExpired(l)){ clearLicense(); return false; } return !!(l && l.key); }
+  function hasLicense(){
+    var l = getLicense();
+    if(licenseExpired(l)){ clearLicense(); return false; }
+    return !!(l && l.key);
+  }
   function licenseTier(){ var l = getLicense(); return l ? l.tier : null; }
 
+  /* ===== KEY SYSTEM (checksum protected) ===== */
+  var KEY_SALT = 'TKSALT-2026-PRIVATE';
+  function keyChecksum(tier, a, b){
+    var s = tier + a + b + KEY_SALT;
+    var h = 7;
+    for(var i=0;i<s.length;i++){ h = (h * 31 + s.charCodeAt(i)) % 1296; }
+    var c = h.toString(36).toUpperCase();
+    return c.length < 2 ? '0' + c : c;
+  }
   function generateKey(tier){
     var rand = function(){ return Math.random().toString(36).substring(2,6).toUpperCase(); };
     var prefix = tier==='basic'?'TKBS':tier==='pro'?'TKPR':'TKLT';
-    return prefix+'-'+rand()+'-'+rand()+'-'+rand();
+    var a = rand(), b = rand();
+    return prefix+'-'+a+'-'+b+'-'+keyChecksum(tier,a,b);
   }
-
   function validateKey(key){
     if(!key) return null;
     key = key.trim().toUpperCase();
     if(key === DEMO_KEY) return {tier: DEMO_TIER, demo:true};
-    if(/^TK(BS|PR|LT)-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(key)){
-      var tierCode = key.substring(2,4);
-      var tier = tierCode==='BS'?'basic':tierCode==='PR'?'pro':'lifetime';
-      return {tier:tier, demo:false};
-    }
+    var m = key.match(/^TK(BS|PR|LT)-([A-Z0-9]{4})-([A-Z0-9]{4})-([A-Z0-9]{2,4})$/);
+    if(!m) return null;
+    var tier = m[1]==='BS'?'basic':m[1]==='PR'?'pro':'lifetime';
+    if(m[4].length === 4) return {tier:tier, demo:false};                       /* purani bechi hui keys */
+    if(m[4] === keyChecksum(tier, m[2], m[3])) return {tier:tier, demo:false};  /* nayi checksum keys */
     return null;
   }
 
@@ -1735,6 +1748,8 @@
     byId('buyBtn').style.display = 'none';
     var tier = licenseTier();
     byId('footerLicenseTier').textContent = TIERS[tier] ? TIERS[tier].name : (tier || '—');
+    var dlBtn = byId('downloadApp');
+    if(dlBtn) dlBtn.style.display = (tier === 'lifetime') ? '' : 'none';
     buildCharts();
     renderAll();
   }
@@ -1763,10 +1778,10 @@
     byId('payTierName').textContent = t.name;
     byId('payPrice').textContent = '₹' + t.price;
     byId('orderIdTxt').textContent = currentOrderId;
-    /* UPI string — NPCI safe: pa raw (@ encode nahi), amount 2 decimal */
-    var upiString = 'upi://pay?pa=' + UPI_ID.trim() + '&pn=TrackKar&am=' + Number(t.price).toFixed(2) + '&cu=INR&tn=' + currentOrderId;
+    var upiString = 'upi://pay?pa=' + UPI_ID.trim() + '&pn=TrackKar&am=' + Number(t.price).toFixed(2) + '&cu=INR';
     byId('upiQr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(upiString);
     byId('upiIdTxt').textContent = UPI_ID.trim();
+    byId('manualAmt').textContent = t.price;
     byId('upiDeepLink').href = upiString;
     var cf = CASHFREE_LINKS[tier];
     var cfBtn = byId('cfLinkBtn');
@@ -1813,7 +1828,7 @@
 
   function completePurchase(tier, paymentId){
     var key = generateKey(tier);
-    var lic = { key:key, tier:tier, demo:false, paymentId:paymentId||null, purchasedAt:new Date().toISOString(), email:'customer' };
+    var lic = { key:key, tier:tier, demo:false, paymentId:paymentId||null, purchasedAt:new Date().toISOString(), email:'customer', expiresAt:0 };
     setLicense(lic);
     closePayOverlay();
     toast('🎉 License activated: ' + key, '✅');
@@ -1859,12 +1874,22 @@
     var key = byId('licenseInput').value;
     var valid = validateKey(key);
     if(!valid){ toast('Invalid license key. Try ' + DEMO_KEY + ' for demo.', '❌'); return; }
-    var lic = { key:key.toUpperCase(), tier:valid.tier, demo:valid.demo, paymentId:valid.demo?'demo':null, purchasedAt:new Date().toISOString(), email:valid.demo?'demo':'customer',expiresAt: valid.demo ? (Date.now() + DEMO_MINUTES*60*1000) : 0  };
+    var lic = {
+      key:key.toUpperCase(), tier:valid.tier, demo:valid.demo,
+      paymentId:valid.demo?'demo':null, purchasedAt:new Date().toISOString(),
+      email:valid.demo?'demo':'customer',
+      expiresAt: valid.demo ? (Date.now() + DEMO_MINUTES*60*1000) : 0
+    };
     setLicense(lic);
     closeLicenseOverlay();
     var t = TIERS[valid.tier];
-    toast(valid.demo ? 'Demo activated (' + t.name + ')' : 'License activated: ' + t.name, '🔓');
+    if(valid.demo){
+      toast('Demo started — ' + DEMO_MINUTES + ' minute ka full access', '⏳');
+    } else {
+      toast('License activated: ' + t.name, '🔓');
+    }
     showAppPage();
+    updateLicenseBar();
   }
 
   /* ===== SELLER PANEL (logo par 5 tap → PIN → key generator) ===== */

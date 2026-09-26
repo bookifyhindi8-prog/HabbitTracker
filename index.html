@@ -413,6 +413,9 @@
   #pdfQr{width:150px; height:150px; border-radius:14px; border:1px solid var(--line); background:#fff; margin:2px auto 0; display:block}
   .qrhint{font-size:10.5px; color:var(--muted); text-align:center; line-height:1.5}
   #pdfEmbedBox iframe{width:100%; height:320px; border:1px solid var(--line); border-radius:16px; background:#fff}
+  .upiidrow{font-size:12px; color:var(--muted); margin:0 auto 12px; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap}
+  .upiidrow b{font-family:'Courier New',monospace; color:var(--ink)}
+  .upiidrow .btn{padding:4px 10px; font-size:11px}
 
   .license-input-row{display:flex; gap:8px; margin:10px 0}
   .license-input-row input{
@@ -783,10 +786,8 @@
     <div class="mico gold">🛒</div>
     <h3>Pay <b id="payPrice">₹29</b> — <span id="payTierName">Pro</span> <span style="font-size:12px;color:var(--muted)">(Order: <b id="orderIdTxt">—</b>)</span></h3>
     <p id="payDesc">Step 1: UPI se pay karo → Step 2: "I have paid" dabao → seller verify karke license key bhejega (24h).</p>
-    <img id="upiQr" alt="UPI QR" style="width:170px;height:170px;border-radius:14px;border:1px solid var(--line);background:#fff;margin:0 auto 12px;display:block">
-   <div style="font-size:12px;color:var(--muted);margin-bottom:10px">UPI ID: <b id="upiIdTxt" style="font-family:monospace">—</b> <button class="btn btn-ghost" id="copyUpiBtn" type="button" style="padding:4px 10px;font-size:11px">📋 copy</button></div>
-
-   
+    <img id="upiQr" alt="UPI QR" style="width:170px;height:170px;border-radius:14px;border:1px solid var(--line);background:#fff;margin:0 auto 10px;display:block">
+    <div class="upiidrow">UPI ID: <b id="upiIdTxt">—</b> <button class="btn btn-ghost" id="copyUpiBtn" type="button">📋 copy</button></div>
     <div class="pdfopts"><a class="btn btn-primary" id="upiDeepLink">📱 Open in UPI app</a><a class="btn btn-ghost" id="cfLinkBtn" style="display:none" target="_blank" rel="noopener">💳 Pay with Cashfree</a><button class="btn btn-gold" id="paidWhatsapp" type="button">✅ I have paid — WhatsApp receipt</button></div>
     <div class="pdfopts" style="margin-top:8px"><button class="btn btn-ghost" id="paidEmail" type="button">📧 Receipt by email</button><button class="btn btn-ghost" id="haveKeyBtn" type="button">🔑 I have a license key</button><button class="btn btn-ghost" id="payCancel" type="button">Close</button></div>
   </div>
@@ -847,7 +848,7 @@
 
   /* =====================================================================
      💳 CONFIG — 100% STATIC SITE (GitHub Pages ready, koi server nahi)
-     Line 887: UPI ID | Line 888: WhatsApp | Line 889: Seller PIN | Line 890: Cashfree links (optional)
+     Line 889: UPI ID | Line 890: WhatsApp | Line 891: Seller PIN | Line 892: Cashfree links (optional)
      Payment flow: UPI QR / Cashfree link → buyer WhatsApp par receipt bhejta hai →
      aap verify karke license key bhejte ho (seller panel: logo par 5 tap).
   ===================================================================== */
@@ -871,7 +872,7 @@
   /* =====================================================================
      DATA LAYER
   ===================================================================== */
-  var STORAGE_KEY = 'trackkar-habit-state-v12';
+  var STORAGE_KEY = 'trackkar-habit-state-v13';
   var THEME_KEY = 'trackkar-theme';
   var LICENSE_KEY = 'trackkar-license';
   var WEEK_COLORS = ['#6ea8ea','#f08cb4','#4fc8bc','#eebf3a','#a58fd8'];
@@ -1751,13 +1752,10 @@
     byId('payTierName').textContent = t.name;
     byId('payPrice').textContent = '₹' + t.price;
     byId('orderIdTxt').textContent = currentOrderId;
-    var upiString =  var upiString = 'upi://pay?pa=' + UPI_ID.trim() + '&pn=TrackKar&am=' + Number(t.price).toFixed(2) + '&cu=INR&tn=' + currentOrderId;
-                    
-                    
+    /* UPI string — NPCI safe: pa raw (@ encode nahi), amount 2 decimal */
+    var upiString = 'upi://pay?pa=' + UPI_ID.trim() + '&pn=TrackKar&am=' + Number(t.price).toFixed(2) + '&cu=INR&tn=' + currentOrderId;
     byId('upiQr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(upiString);
-
     byId('upiIdTxt').textContent = UPI_ID.trim();
-   
     byId('upiDeepLink').href = upiString;
     var cf = CASHFREE_LINKS[tier];
     var cfBtn = byId('cfLinkBtn');
@@ -1771,18 +1769,17 @@
   byId('payCancel').addEventListener('click', closePayOverlay);
   byId('payOverlay').addEventListener('click', function(e){ if(e.target===this) closePayOverlay(); });
 
-
-byId('copyUpiBtn').addEventListener('click', function(){
+  byId('copyUpiBtn').addEventListener('click', function(){
     copyText(UPI_ID.trim()).then(function(){ toast('UPI ID copied', '📋'); });
   });
 
- 
   byId('paidWhatsapp').addEventListener('click', function(){
     if(!currentBuyTier) return;
     if(UPI_ID.indexOf('PASTE') === 0){
       toast('⚠️ Test mode: UPI ID set nahi hai — payment simulate', '⏳');
-      setTimeout(function(){ completePurchase(currentBuyTier, 'TEST-' + currentOrderId); }, 800);
+      var tier = currentBuyTier;
       closePayOverlay();
+      setTimeout(function(){ completePurchase(tier, 'TEST-' + currentOrderId); }, 800);
       return;
     }
     window.open(this.getAttribute('data-wa'), '_blank');
@@ -1793,7 +1790,7 @@ byId('copyUpiBtn').addEventListener('click', function(){
     if(!currentBuyTier) return;
     window.location.href = this.getAttribute('data-mail');
     closePayOverlay();
-    toast('Email draft khula — send karo, seller key bhejega 🔑', '');
+    toast('Email draft khula — send karo, seller key bhejega 🔑', '📧');
   });
   byId('haveKeyBtn').addEventListener('click', function(){
     closePayOverlay();

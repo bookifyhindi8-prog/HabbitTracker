@@ -868,6 +868,7 @@
   /* Demo license key — works as a free trial, gives Pro features */
   var DEMO_KEY = 'DEMO2026';
   var DEMO_TIER = 'pro';
+  var DEMO_DAYS = 1;   // demo kitne din chalega (7 = ek hafta, 3 = 3 din)
 
   /* =====================================================================
      DATA LAYER
@@ -902,7 +903,12 @@
   }
   function setLicense(lic){ safeSet(LICENSE_KEY, JSON.stringify(lic)); }
   function clearLicense(){ safeDel(LICENSE_KEY); }
-  function hasLicense(){ var l = getLicense(); return !!(l && l.key); }
+  function licenseExpired(l){
+    if(!l || !l.demo) return false;      // paid keys (TKBS/TKPR/TKLT) = lifetime, kabhi expire nahi
+    if(!l.expiresAt) return true;        // update se pehle wale purane demo = expire
+    return Date.now() > l.expiresAt;
+  }
+  function hasLicense(){ var l = getLicense(); if(licenseExpired(l)){ clearLicense(); return false; } return !!(l && l.key); }
   function licenseTier(){ var l = getLicense(); return l ? l.tier : null; }
 
   function generateKey(tier){
@@ -1742,7 +1748,12 @@
     byId('licenseKeyDisplay').textContent = lic.key;
     var tier = TIERS[lic.tier];
     byId('licenseLabel').textContent = (tier ? tier.name : 'Licensed') + ' License';
-    byId('licenseSub').textContent = lic.demo ? 'Demo / trial access' : 'Activated ' + new Date(lic.purchasedAt).toLocaleDateString();
+    if(lic.demo && lic.expiresAt){
+      var daysLeft = Math.max(0, Math.ceil((lic.expiresAt - Date.now())/(24*60*60*1000)));
+      byId('licenseSub').textContent = 'Demo trial — ' + daysLeft + ' din baaki';
+    } else {
+      byId('licenseSub').textContent = 'Activated ' + new Date(lic.purchasedAt).toLocaleDateString();
+    }
   }
 
   function openPayModal(tier){
@@ -1848,7 +1859,7 @@
     var key = byId('licenseInput').value;
     var valid = validateKey(key);
     if(!valid){ toast('Invalid license key. Try ' + DEMO_KEY + ' for demo.', '❌'); return; }
-    var lic = { key:key.toUpperCase(), tier:valid.tier, demo:valid.demo, paymentId:valid.demo?'demo':null, purchasedAt:new Date().toISOString(), email:valid.demo?'demo':'customer' };
+    var lic = { key:key.toUpperCase(), tier:valid.tier, demo:valid.demo, paymentId:valid.demo?'demo':null, purchasedAt:new Date().toISOString(), email:valid.demo?'demo':'customer', expiresAt: valid.demo ? (Date.now() + DEMO_DAYS*24*60*60*1000) : 0 };
     setLicense(lic);
     closeLicenseOverlay();
     var t = TIERS[valid.tier];

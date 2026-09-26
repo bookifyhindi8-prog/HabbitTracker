@@ -1943,6 +1943,11 @@
   /* ===== INIT ===== */
   try{
     byId('themeIco').textContent = isDark() ? '☀️' : '🌙';
+    var _l = getLicense();
+    if(_l && licenseExpired(_l)){
+      clearLicense();
+      setTimeout(function(){ toast('Demo trial khatam ho gaya — ab key daalein ya kharidein', '⏳'); }, 800);
+    }
     if(hasLicense()){ showAppPage(); } else { showShopPage(); }
     initReveal();
     if(!storageOk) toast('Browser blocks saving — data lasts this session only', '⚠️');

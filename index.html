@@ -869,9 +869,9 @@
      DEMO_MINUTES = demo key kitne MINUTE chalega
      10 = das minute | 60 = 1 ghanta | 1440 = 1 din | 10080 = 7 din */
   
-  var DEMO_KEY = 'VKMS5546';
+  var DEMO_KEY = 'DEMO2026';
   var DEMO_TIER = 'pro';
-  var DEMO_MINUTES = 10;
+  var DEMO_MINUTES = 1;
   
 
   /* =====================================================================
@@ -1968,8 +1968,21 @@
     for(i=0;i<els.length;i++) io.observe(els[i]);
     setTimeout(showAll, 1600);
   }
-
-  /* ===== INIT ===== */
+/* ===== LIVE DEMO TIMER (har 15 sec check) ===== */
+  setInterval(function(){
+    var l = getLicense();
+    if(l && l.demo){
+      if(licenseExpired(l)){
+        clearLicense();
+        showShopPage();
+        toast('Demo trial khatam ho gaya — ab key daalein ya kharidein', '⏳');
+      } else if(l.expiresAt){
+        var sub = byId('licenseSub');
+        if(sub) sub.textContent = 'Demo trial — ' + Math.max(0, Math.ceil((l.expiresAt - Date.now())/60000)) + ' minute baaki';
+      }
+    }
+  }, 15000);
+ /* ===== INIT ===== */
   try{
     byId('themeIco').textContent = isDark() ? '☀️' : '🌙';
     var _l = getLicense();
